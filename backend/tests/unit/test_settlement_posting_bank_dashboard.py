@@ -16,29 +16,29 @@ AP = UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
 
 
 def _sum(lines):
-    return sum(l.debit for l in lines), sum(l.credit for l in lines)
+    return sum(line.debit for line in lines), sum(line.credit for line in lines)
 
 
 class SettlementJournalTests(unittest.TestCase):
     def test_receipt_debits_cash_and_credits_receivable(self):
         lines = settlement_journal("receivable", Decimal("400.00"), CASH, AR)
-        dr = {l.account_id: l.debit for l in lines if l.debit}
-        cr = {l.account_id: l.credit for l in lines if l.credit}
+        dr = {line.account_id: line.debit for line in lines if line.debit}
+        cr = {line.account_id: line.credit for line in lines if line.credit}
         self.assertEqual(dr, {CASH: Decimal("400.00")})
         self.assertEqual(cr, {AR: Decimal("400.00")})
         self.assertEqual(_sum(lines)[0], _sum(lines)[1])
 
     def test_supplier_payment_debits_payable_and_credits_cash(self):
         lines = settlement_journal("payable", Decimal("250.50"), CASH, AP)
-        dr = {l.account_id for l in lines if l.debit}
+        dr = {line.account_id for line in lines if line.debit}
         self.assertEqual(dr, {AP})
         self.assertEqual(_sum(lines), (Decimal("250.50"), Decimal("250.50")))
 
     def test_reversal_swaps_sides_and_stays_balanced(self):
         original = settlement_journal("receivable", Decimal("400.00"), CASH, AR)
         reversal = settlement_journal("receivable", Decimal("-400.00"), CASH, AR)
-        self.assertEqual({(l.account_id, l.debit, l.credit) for l in reversal},
-                         {(l.account_id, l.credit, l.debit) for l in original})
+        self.assertEqual({(line.account_id, line.debit, line.credit) for line in reversal},
+                         {(line.account_id, line.credit, line.debit) for line in original})
         assert_balanced(reversal)
 
     def test_invalid_inputs_are_refused(self):
