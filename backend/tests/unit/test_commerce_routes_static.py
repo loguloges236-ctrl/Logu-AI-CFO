@@ -52,8 +52,8 @@ class CommerceRouteGuardTests(unittest.TestCase):
             )
 
     def test_every_state_changing_route_requires_csrf(self):
-        for node, method, path in self.routes:
-            if method in MUTATING:
+        for node, _method, path in self.routes:
+            if _method in MUTATING:
                 deps = " ".join(_dependency_names(node))
                 self.assertIn("require_csrf", deps, f"{method.upper()} {path} ({node.name}) lacks CSRF")
 
