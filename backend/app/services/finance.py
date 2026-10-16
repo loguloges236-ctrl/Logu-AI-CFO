@@ -529,9 +529,9 @@ def _json(value: Any) -> Any:
         return str(value)
     if isinstance(value, dict):
         return {k: _json(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return [_json(v) for v in value]
-    if isinstance(value, (date,)):
+    if isinstance(value, date):
         return value.isoformat()
     if hasattr(value, "__dataclass_fields__"):
         return {k: _json(getattr(value, k)) for k in value.__dataclass_fields__}

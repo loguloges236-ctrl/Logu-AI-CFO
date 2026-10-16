@@ -44,15 +44,15 @@ def _json_safe(value: Any) -> Any:
         return str(value)
     if isinstance(value, float):
         return str(value)
-    if isinstance(value, (date,)):
+    if isinstance(value, date):
         return value.isoformat()
     if isinstance(value, uuid.UUID):
         return str(value)
     if isinstance(value, dict):
         return {str(key): _json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return [_json_safe(item) for item in value][:MAX_LINES_IN_PAYLOAD * 5]
-    if value is None or isinstance(value, (str, int, bool)):
+    if value is None or isinstance(value, str | int | bool):
         return value
     return str(value)[:500]
 

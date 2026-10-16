@@ -34,7 +34,7 @@ def _tree(relpath: str) -> ast.Module:
 def _defined_names(relpath: str) -> set[str]:
     names: set[str] = set()
     for node in _tree(relpath).body:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
             names.add(node.name)
         elif isinstance(node, ast.Assign):
             for target in node.targets:
@@ -42,7 +42,7 @@ def _defined_names(relpath: str) -> set[str]:
                     names.add(target.id)
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             names.add(node.target.id)
-        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+        elif isinstance(node, ast.Import | ast.ImportFrom):
             for alias in node.names:
                 names.add((alias.asname or alias.name).split(".")[0])
     return names
