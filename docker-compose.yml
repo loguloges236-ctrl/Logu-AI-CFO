@@ -2,6 +2,7 @@
 #   public : only the edge (caddy) is attached; it publishes ports on EDGE_BIND_ADDRESS
 #   app    : internal (no internet route) - caddy, frontend, backend
 #   data   : internal - backend, migrate, database, malware scanner
+#   updates: outbound-only egress for ClamAV signature refresh; no ports are published
 # The database and scanner are never published to the host.
 name: logu-ai-cfo
 
