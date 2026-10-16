@@ -167,7 +167,7 @@ def convert_quotation(db: DBSession, request: Request, auth: AuthenticatedSessio
                     "quantity": str(line.quantity),
                     "rate": str(line.rate),
                     "discount_percent": str(line.discount_percent),
-                    "tax_rate": str(line.tax_rate),
+                    "tax_rate": format(line.tax_rate.normalize(), "f"),
                 }
                 for line in quotation_lines(db, quotation.id)
             ],
