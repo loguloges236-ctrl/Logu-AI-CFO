@@ -15,16 +15,24 @@ from tests.conftest import EMAIL, _alembic_config  # noqa: F401  (helper reuse)
 def test_fresh_database_migrates_to_head(fresh_db):
     with get_engine().connect() as connection:
         version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    assert version == "20261007_0001"
+    assert version == "20261008_0008"
 
 
 def test_migrated_schema_matches_orm_metadata(fresh_db):
     import app.models.entities  # noqa: F401
 
+    def include_object(obj, name, type_, reflected, compare_to):
+        # Explicit SQL migrations also own query indexes and uniqueness guards that intentionally
+        # are not duplicated in SQLAlchemy metadata. Still compare every mapped table/column/type.
+        if reflected and compare_to is None and type_ in {"index", "unique_constraint"}:
+            return False
+        return True
+
     with get_engine().connect() as connection:
-        context = MigrationContext.configure(connection, opts={"compare_type": True})
+        context = MigrationContext.configure(
+            connection, opts={"compare_type": True, "include_object": include_object}
+        )
         differences = compare_metadata(context, Base.metadata)
-    # Unique-constraint naming is compared by column set; any difference must be reviewed, not ignored.
     assert differences == [], differences
 
 
