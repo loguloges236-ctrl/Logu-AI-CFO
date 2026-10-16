@@ -47,12 +47,12 @@ Boundaries:
 The verified workflow on 16 October 2026 completed all steps successfully:
 1. Install backend dependencies.
 2. Apply automatic Ruff fixes and commit source cleanups if needed.
-3. Python runtime dependency audit (`pip-audit`).
+3. Python runtime dependency audit (pip-audit).
 4. Ruff lint.
 5. Backend unit tests.
 6. PostgreSQL integration tests, including migration/ORM and finance/commerce/auth flows.
 7. Generate/refresh frontend lockfile.
-8. `npm ci`.
+8. npm ci.
 9. Production npm dependency audit.
 10. Frontend lint.
 11. TypeScript typecheck.
@@ -60,21 +60,21 @@ The verified workflow on 16 October 2026 completed all steps successfully:
 13. Docker Compose configuration validation.
 14. Backend and frontend Docker image builds.
 
-The workflow is configured to re-run on main-branch pushes.
+A separate container security workflow now rebuilds both application images on pushes, pull requests, and weekly, then scans OS/library dependencies for known critical vulnerabilities. It fails the scan job on critical findings after excluding vulnerabilities without a fix, and uploads SARIF results to GitHub code scanning when repository permissions/settings allow. Weekly Dependabot updates are configured for Python, npm, Docker base images, and GitHub Actions.
 
 ## Known security and deployment limitations
 
-- The full npm development dependency graph reports the high-severity `braces` advisory GHSA-vfj7-8cjw-p6xm through the ESLint/Next lint toolchain. As of 16 October 2026 the upstream advisory lists **no patched release**. Production dependencies pass `npm audit --omit=dev --audit-level=high`; the dev-tree issue is tracked and is not claimed as fixed.
+- The full npm development dependency graph reports the high-severity braces advisory GHSA-vfj7-8cjw-p6xm through the ESLint/Next lint toolchain. As of 16 October 2026 the upstream advisory lists no patched release. Production dependencies pass the production-only npm audit; the dev-tree issue is tracked and is not claimed as fixed.
 - Voice biometric unlock/enrolment/anti-spoofing is not implemented.
 - Password reset delivery over email/SMS is not integrated; recovery is operator-run.
 - The project has not been deployed to a live server. Target DNS/TLS, real secrets, persistent upload storage, real ClamAV scanning, backup/restore, and production monitoring need environment-specific acceptance tests.
-- No container image vulnerability scan (for example Trivy), load test, or recovery drill is currently part of CI.
+- No load test or recovery drill is currently part of CI.
 - Database-level role separation, field/file key rotation, nonce-based CSP, and operational access logs remain hardening work.
 
 ## Recommended next steps
 
 1. Deploy first to a private staging server; generate and store secrets securely and keep edge ports bound to loopback until a reverse proxy/TLS plan is configured.
-2. Run first-start and owner-bootstrap steps from [Deployment](DEPLOYMENT.md), verify `/health/ready`, upload/scan/download a harmless test document, and test recovery/revocation.
+2. Run first-start and owner-bootstrap steps from [Deployment](DEPLOYMENT.md), verify /health/ready, upload/scan/download a harmless test document, and test recovery/revocation.
 3. Rehearse PostgreSQL and upload-volume backups and restore.
-4. Add container scanning, staging end-to-end browser tests, and concurrency/load tests.
-5. Reassess the `braces` advisory when upstream publishes a patch; do not downgrade major dependencies with `npm audit fix --force` just to silence it.
+4. Run the new container scan workflow and address any critical image findings before staging.
+5. Reassess the braces advisory when upstream publishes a patch; do not use npm audit fix --force just to silence it.
