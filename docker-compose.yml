@@ -109,9 +109,6 @@ services:
     security_opt: ["no-new-privileges:true"]
     networks:
       public: {}
-  # ClamAV needs outbound HTTPS/DNS to refresh malware signatures. No ports are published;
-  # this network is attached only to ClamAV and cannot be reached by app services.
-  updates: {}
       app:
         ipv4_address: 172.28.10.10
 
@@ -131,3 +128,6 @@ networks:
       config:
         - subnet: 172.28.10.0/24
   public: {}
+  # ClamAV needs outbound HTTPS/DNS to refresh malware signatures. No ports are published;
+  # this network is attached only to ClamAV and cannot be reached by app services.
+  updates: {}
