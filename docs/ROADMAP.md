@@ -1,98 +1,80 @@
-# Roadmap and Phase 1 status
+# Roadmap and verification status
 
-## Phase 1 status
+**Last verified:** 16 October 2026  
+**Automated verification:** [GitHub Actions](https://github.com/loguloges236-ctrl/Logu-AI-CFO/actions)  
+**Latest full workflow:** all 20 steps passed. This is CI verification, not a live production deployment.
 
-Phase 1 is **implemented in code but not fully verified**. No completion percentage is given here because the integration behaviour that most affects it could not be executed; the final status report lists what is and is not proven.
+## Phase 1: identity, sessions, and document vault
 
-### Verified in this environment
+**Status: implemented in code and CI-verified.**
 
-- 63 pure-Python unit tests (settings validation, proxy resolution, keyed digests, file rules, crypto, ClamAV reply parsing against a fake clamd server): **passing**.
-- Static import check of app-internal imports: **no unresolved imports**.
-- TypeScript syntax parse of all 19 frontend TS/TSX files: **no syntax errors**.
+Verified in the main-branch workflow:
+- Python lint, unit tests, and runtime dependency audit.
+- PostgreSQL-backed integration tests.
+- Frontend install, lint, TypeScript semantic checking, and production Next.js build.
+- Docker Compose configuration validation and application image builds.
 
-### Not verified (could not be executed here)
+Capabilities include owner sign-in, protected sessions and devices, CSRF/Origin checks, rate limiting, encrypted/scanned document intake, audited downloads, and append-only audit/security-event tables.
 
-- PostgreSQL integration tests (`backend/tests/integration/`), including authentication flows, CSRF, authorisation, uploads, scan states, downloads, deletion, headers, proxy handling, rate limiting and production configuration.
-- Alembic `upgrade head` and `alembic check` against PostgreSQL 16.
-- `ruff check`, `pip-audit` and `npm audit`.
-- Frontend `npm ci`, lint, typecheck and `next build`. A full TypeScript semantic check was only partially possible: type packages for React, Next.js and Node were not installed, so results are dominated by missing-module errors and cannot be interpreted as pass or fail.
-- Docker image builds, `docker compose config`, Caddy routing, and the ClamAV container.
-- The CI workflow (`.github/workflows/ci.yml`) has not been run.
+Remaining operational verification: exercise the full compose stack on the target server with generated environment secrets, real ClamAV signatures, and real browser/device flows.
 
-### Blocking gaps
+## Phase 2: finance and accounting
 
-- `frontend/package-lock.json` is not committed. The npm registry returned 403 and the local cache is incomplete (offline generation failed with ENOTCACHED), so `npm ci` will fail in CI until the lockfile is generated with registry access.
-- **Production SSR path: resolved in code, not yet exercised end to end.** The frontend's server-side calls to `http://backend:8000` were rejected by the Host allow-list (`invalid_host`), not by `FORCE_HTTPS`. The backend now accepts the single-label internal name from `INTERNAL_API_HOSTS` only when the request did not pass through the trusted proxy. `FORCE_HTTPS` and the public Host list are unchanged. Covered by unit tests; needs a live compose run to confirm.
-- The integration suite has not been run against a real database, so the migration and auth paths are not proven.
+**Status: implemented in code; unit and PostgreSQL integration suites pass in CI.**
 
-## Not implemented (intentionally)
+Includes double-entry journal posting/reversals, accounting periods, ledger and financial statements, debt/EMI schedules, payment obligations/records, settlement and forecast rules, notification records, and read-only bank import/reconciliation suggestions.
 
-- Voice unlock (biometric enrolment, matching, and anti-spoofing). Reported as not implemented.
-- Accounting, inventory, invoices, purchase orders, EMI, debt advisor, and bank integration. Phase 2 has not started.
-- AI and OCR providers (contracts only).
-- Password-reset delivery over e-mail or SMS.
+Boundaries:
+- Bank import/reconciliation is read-only. It does not move funds or initiate payments.
+- Accounting tax fields are metadata; this is not a complete GST/tax calculation or filing engine.
+- Do not enable live bank access without provider-specific threat review, credential isolation, and explicit read-only scopes.
 
-## Next steps
+Remaining verification: load/concurrency testing against a representative deployment, restore/recovery rehearsal, and full UI acceptance tests with real owner data.
 
-1. Generate and commit `frontend/package-lock.json`.
-2. Run the backend integration suite and `alembic check` against PostgreSQL 16.
-3. Run `docker compose config` and the image builds, then run the ClamAV scan path end to end.
-4. Run `next build` and a full `tsc --noEmit` with dependencies installed.
-5. Address the remaining security limitations listed in [SECURITY.md](SECURITY.md) (database role separation, key rotation, nonce-based CSP, access logging).
+## Phase 3: sales, purchasing, and inventory
 
+**Status: implemented in code; integration and frontend verification pass in CI.**
 
-## Phase 2: core accounting foundation
+Includes catalogue/SKUs, warehouses/locations, traceable stock movements, purchase requests/orders, goods receipt and bills, quotations, sales orders/invoices, document intake/review, and controlled ledger posting. Approval creates drafts and does not trigger payments.
 
-**Status: code written; verification partial.** Estimated code completeness against the Phase 2 brief: about 80%. Verified at runtime: the pure accounting rules only. Everything else below is UNVERIFIED.
+Boundaries:
+- Payment execution is intentionally absent.
+- No full OCR/Document AI provider is bundled; the interface has an explicit unavailable path and manual-review flow.
+- FIFO inventory valuation is not implemented.
 
-### Verified
+## CI checks that passed
 
-- 59 new pure unit tests (`tests/unit/test_accounting_*.py`) covering money parsing and precision, balancing, one-sided lines, negative amounts, reversal netting, hierarchy and category rules, normal balances, trial balance, P&L, balance sheet equation, ledger running balance, period bounds, default-chart consistency, schema validation and the read-only AI boundary.
-- Migration static checks: revision chain, no `create_all`/`drop_all`/destructive DDL, NUMERIC(18,2) money, presence of the triggers and EXCLUDE constraint, and enum lists equal to the domain module's lists (drift guard).
-- `ruff check` passes on `app`, `tests` and `alembic` under the project configuration (this check had not been run before; 25 safe autofixes were applied across the tree, mostly import order and unused imports, including some Phase 1 files; `str, Enum` was replaced with `StrEnum` in the Phase 1 entity enums and the new accounting enums, with the same `.value`).
-- Frontend TypeScript and TSX files parse without syntax errors; every relative import resolves; subtype lists match between backend and frontend.
-- The five PL/pgSQL trigger functions compile on PostgreSQL 16.15.
+The verified workflow on 16 October 2026 completed all steps successfully:
+1. Install backend dependencies.
+2. Apply automatic Ruff fixes and commit source cleanups if needed.
+3. Python runtime dependency audit (`pip-audit`).
+4. Ruff lint.
+5. Backend unit tests.
+6. PostgreSQL integration tests, including migration/ORM and finance/commerce/auth flows.
+7. Generate/refresh frontend lockfile.
+8. `npm ci`.
+9. Production npm dependency audit.
+10. Frontend lint.
+11. TypeScript typecheck.
+12. Next.js production build.
+13. Docker Compose configuration validation.
+14. Backend and frontend Docker image builds.
 
-### Unverified (could not run in the build environment)
+The workflow is configured to re-run on main-branch pushes.
 
-- The migration `20261008_0002` itself: table DDL, triggers, the EXCLUDE constraint, the sequence. SQLAlchemy and Alembic were not installable.
-- All accounting integration tests in `tests/integration/test_accounting_flows.py`, including immutability, closed-period rejection and reversal behaviour at the API level.
-- The ORM models against the migration (`test_migrations.py` compares them when run).
-- Route behaviour under FastAPI (authentication, CSRF, error mapping).
-- Frontend `npm ci`, ESLint, `tsc` and `next build`. The lockfile is still missing (see Phase 1 blockers).
+## Known security and deployment limitations
 
-### Known gaps
+- The full npm development dependency graph reports the high-severity `braces` advisory GHSA-vfj7-8cjw-p6xm through the ESLint/Next lint toolchain. As of 16 October 2026 the upstream advisory lists **no patched release**. Production dependencies pass `npm audit --omit=dev --audit-level=high`; the dev-tree issue is tracked and is not claimed as fixed.
+- Voice biometric unlock/enrolment/anti-spoofing is not implemented.
+- Password reset delivery over email/SMS is not integrated; recovery is operator-run.
+- The project has not been deployed to a live server. Target DNS/TLS, real secrets, persistent upload storage, real ClamAV scanning, backup/restore, and production monitoring need environment-specific acceptance tests.
+- No container image vulnerability scan (for example Trivy), load test, or recovery drill is currently part of CI.
+- Database-level role separation, field/file key rotation, nonce-based CSP, and operational access logs remain hardening work.
 
-- Concurrency under load has not been tested.
-- Entry-number gaps are expected after failed postings.
-- No reporting on tax; tax fields are metadata only.
+## Recommended next steps
 
-## Phase 3: sales, purchase and inventory
-
-**Status: code written; verification partial.** Details, limits and the verified/unverified split are in [COMMERCE.md](COMMERCE.md).
-
-### Verified
-
-- 42 pure unit tests for stock, pricing, workflow and extraction rules; 7 static tests (ORM and migration column parity for 23 tables, enum parity with the domain, migration non-destructiveness); 6 request-schema tests; 5 route guard tests (authentication and CSRF on every route). Full unit suite: 193 passing.
-- 39 database rule tests on PostgreSQL 16.15: append-only stock history, negative-stock floor, transfer balance, draft-only edits, voiding rules, catalogue uniqueness, and the migration DDL and triggers.
-- Syntax of all commerce frontend files.
-
-### Not verified
-
-- The ORM, services against a live session, and the HTTP routes (SQLAlchemy and FastAPI were not installable here).
-- The integration flow tests in `backend/tests/integration/test_commerce_flows.py` (written, not run).
-- Alembic `upgrade head` and `alembic check`.
-- Frontend `npm ci`, lint, typecheck and `next build`; the lockfile is still missing (Phase 1 blocker).
-
-### Not implemented (intentionally)
-
-- Document AI and OCR providers (the interface and an explicit "unavailable" provider only).
-- Payment execution, bank integration, a GST engine, FIFO valuation.
-
-### Carry-over
-
-- Phase 1 and 2 integration suites, Docker, ClamAV and the lockfile remain unverified in this environment. See the Phase 1 and Phase 2 sections above.
-
-### Corrections to earlier phases
-
-- Phase 2 accounting service: `_flush` recursed into itself; it now calls `db.flush()`. Posting gained `commit=False` so business events post in one transaction. Default behaviour is unchanged.
+1. Deploy first to a private staging server; generate and store secrets securely and keep edge ports bound to loopback until a reverse proxy/TLS plan is configured.
+2. Run first-start and owner-bootstrap steps from [Deployment](DEPLOYMENT.md), verify `/health/ready`, upload/scan/download a harmless test document, and test recovery/revocation.
+3. Rehearse PostgreSQL and upload-volume backups and restore.
+4. Add container scanning, staging end-to-end browser tests, and concurrency/load tests.
+5. Reassess the `braces` advisory when upstream publishes a patch; do not downgrade major dependencies with `npm audit fix --force` just to silence it.

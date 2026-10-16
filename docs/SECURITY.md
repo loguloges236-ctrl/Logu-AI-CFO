@@ -87,8 +87,8 @@ This document describes what the code does. Items marked **limitation** are know
 4. Database superuser can bypass audit triggers.
 5. CSP keeps `'unsafe-inline'` for scripts.
 6. Access logs are disabled.
-7. Dependency audits (`pip-audit`, `npm audit`) and Trivy have not been executed in this environment; results are pending in CI.
-8. No package lockfile for the frontend yet, so reproducible `npm ci` is not yet possible.
+7. Python runtime dependency audit and production npm dependency audit pass in CI. The full npm development dependency tree still reports high-severity GHSA-vfj7-8cjw-p6xm for `braces`, pulled transitively through the ESLint/Next lint toolchain. As of 16 October 2026 the advisory lists no patched upstream release. CI therefore gates `npm audit --omit=dev --audit-level=high` and documents this development-tooling limitation rather than applying a risky major downgrade. Trivy/container vulnerability scanning is not yet part of CI.
+8. `frontend/package-lock.json` is committed; `npm ci`, lint, typecheck, and production build pass in CI.
 9. Cross-owner authorisation tests are not meaningful under the single-owner schema.
 
 ## Phase 2: accounting controls
@@ -110,3 +110,9 @@ This document describes what the code does. Items marked **limitation** are know
 - Payment references are stored for audit. No payment is executed.
 
 Not yet covered: an access log for commerce reads, and a review of the document-processing provider's data handling once a real provider is connected.
+
+## Dependency audit status (16 October 2026)
+
+- `pip-audit -r backend/requirements.txt`: passing after updating FastAPI, cryptography, and python-multipart to patched dependency versions.
+- `npm audit --omit=dev --audit-level=high`: passing after upgrading Next.js/React and overriding vulnerable transitive production packages `postcss` and `sharp`.
+- Full `npm audit` still reports the development-only `braces` advisory GHSA-vfj7-8cjw-p6xm through `eslint-config-next` tooling. The advisory database currently lists no patched upstream version (affected through 3.0.3). It is not reported as fixed; re-check upstream before future dependency updates. Do not use `npm audit fix --force` because npm proposes unrelated breaking Next/ESLint major downgrades.

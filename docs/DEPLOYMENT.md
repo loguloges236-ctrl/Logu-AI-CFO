@@ -39,9 +39,11 @@ Production validation (`core/settings_validation.py`) refuses to start when a re
 - Password recovery: `reset-owner-password` (revokes all sessions and writes an audit row).
 - Health: `/health` (process) and `/health/ready` (database `SELECT 1`, 503 on failure).
 
-## Not verified in this environment
+## Verification status (16 October 2026)
 
-Docker builds, `docker compose config`, the Caddy routing and HTTPS behaviour, the ClamAV container, and the migration run on the compose stack were **not executed**. The configuration is written and statically reviewed only.
+GitHub Actions successfully validates `docker compose config --quiet` and builds both the backend and frontend application images. The workflow also runs the Python unit suite, PostgreSQL integration suite, frontend install/lint/typecheck/production build, and dependency audits.
+
+This confirms build and test behaviour on a clean CI runner. It does **not** confirm a live deployment. Before production, run the first-start procedure on the target host and verify Caddy DNS/TLS, the actual ClamAV service and signatures, persistent upload storage permissions, `/health/ready`, backup/restore, and owner bootstrap/recovery. Keep the example secrets out of any live deployment and do not expose internal backend/database ports.
 
 ## Future server migration
 
