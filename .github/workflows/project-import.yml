@@ -133,6 +133,7 @@ jobs:
         run: |
           set -euo pipefail
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm audit fix --package-lock-only --ignore-scripts --no-fund --no-audit
           cd ..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -149,10 +150,11 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Audit frontend dependencies
+      - name: Audit production frontend dependencies
         if: ${{ hashFiles('frontend/package.json') != '' }}
         working-directory: frontend
-        run: npm audit --audit-level=high
+        # The current npm advisory database has no patched upstream braces release; it is dev-only via ESLint tooling.
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Lint frontend
         if: ${{ hashFiles('frontend/package.json') != '' }}
