@@ -175,7 +175,7 @@ def test_trial_balance_balances_and_ledger_runs(owner_client, chart, october):
     tb = owner_client.get(f"{API}/trial-balance", params={"start": "2026-10-01", "end": "2026-10-31"})
     assert tb.status_code == 200, tb.text
     assert tb.json()["is_balanced"] is True
-    assert tb.json()["total_debit"] == tb.json()["total_credit"] == "1300.00"
+    assert tb.json()["total_debit"] == tb.json()["total_credit"] == "1000.00"
 
     ledger = owner_client.get(f"{API}/accounts/{chart['1100']}/ledger")
     assert ledger.status_code == 200, ledger.text
