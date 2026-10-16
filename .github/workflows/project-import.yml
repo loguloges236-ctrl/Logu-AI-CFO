@@ -133,7 +133,6 @@ jobs:
         run: |
           set -euo pipefail
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm audit fix --package-lock-only --ignore-scripts --no-fund --no-audit
           cd ..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
