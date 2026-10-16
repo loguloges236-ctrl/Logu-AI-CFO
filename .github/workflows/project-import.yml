@@ -1,16 +1,17 @@
-name: Import Logu AI CFO source and validate
+name: Backend, frontend, and deployment validation
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  import-and-validate:
-    if: ${{ github.event_name != 'push' || (github.event.head_commit.message != 'Import Logu AI CFO project source' && github.event.head_commit.message != 'Apply Ruff autofixes' && github.event.head_commit.message != 'Refresh frontend dependency lockfile') }}
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     services:
@@ -42,31 +43,6 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Restore clean project source
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f Logu-AI-CFO-clean-upload.zip ]]; then
-            python .github/scripts/import_project_zip.py
-            if [[ -f frontend/package.json && ! -f frontend/package-lock.json ]]; then
-              (cd frontend && npm install --package-lock-only --ignore-scripts --no-audit --no-fund)
-            fi
-            if [[ -f frontend/package.json && ( -f backend/requirements-dev.txt || -f backend/requirements.txt || -f backend/pyproject.toml ) ]]; then
-              rm -f Logu-AI-CFO-clean-upload.zip
-            fi
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A
-            if git diff --cached --quiet; then
-              echo "No source changes needed."
-            else
-              git commit -m "Import Logu AI CFO project source"
-              git push origin HEAD:main
-            fi
-          else
-            echo "Source was already imported; validating repository files."
-          fi
-
       - name: Install backend dependencies
         shell: bash
         run: |
@@ -82,27 +58,6 @@ jobs:
           else
             echo "No backend dependency manifest found." >&2
             exit 1
-          fi
-
-      - name: Apply Ruff autofixes and commit source cleanups
-        working-directory: backend
-        shell: bash
-        run: |
-          set -euo pipefail
-          if python -m ruff check app tests alembic --fix --unsafe-fixes; then
-            echo "No Ruff autofixes needed."
-          else
-            echo "Ruff found remaining diagnostics after all configured automatic fixes."
-          fi
-          cd ..
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add backend
-          if git diff --cached --quiet; then
-            echo "No lint-driven source changes to commit."
-          else
-            git commit -m "Apply Ruff autofixes"
-            git push origin HEAD:main
           fi
 
       - name: Audit backend dependencies
@@ -125,24 +80,6 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql+psycopg://logu:logu-ci-test-password@localhost:5432/logu_test
         run: python -m pytest tests/integration -q
-
-      - name: Refresh frontend lockfile for pinned packages
-        if: ${{ hashFiles('frontend/package.json') != '' }}
-        working-directory: frontend
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          cd ..
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/package-lock.json
-          if git diff --cached --quiet; then
-            echo "Frontend lockfile already matches package.json."
-          else
-            git commit -m "Refresh frontend dependency lockfile"
-            git push origin HEAD:main
-          fi
 
       - name: Install frontend dependencies
         if: ${{ hashFiles('frontend/package.json') != '' }}
