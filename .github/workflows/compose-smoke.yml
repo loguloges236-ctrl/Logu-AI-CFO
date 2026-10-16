@@ -65,7 +65,7 @@ jobs:
           docker compose config --quiet
 
       - name: Build and start the complete stack
-        run: docker compose up -d --build
+        run: docker compose up -d --build --wait --wait-timeout 600
 
       - name: Verify backend readiness and public frontend route
         shell: bash
@@ -83,7 +83,7 @@ jobs:
             docker compose ps
             docker compose logs --no-color --tail=200
             echo 'Backend did not become ready within 3 minutes. Direct database probe follows:' >&2
-            docker compose exec -T backend python - <<'PY'
+            docker compose exec -T backend python - <<'PY' || true
           from sqlalchemy import text
           from app.db.session import get_session_factory
           try:
@@ -93,7 +93,7 @@ jobs:
               print('database probe failed:', type(exc).__name__, str(exc))
               raise
           PY
-            docker compose exec -T backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"
+            docker compose exec -T backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())" || true
             exit 1
           fi
           page=0
