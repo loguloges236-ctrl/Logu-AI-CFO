@@ -104,6 +104,12 @@ def _posted_sales_invoice(owner_client, setup) -> str:
 
 def test_flow_a_emi_payment_posts_and_reverses_journal(owner_client, books):
     h = csrf_headers(owner_client)
+    november = owner_client.post(
+        f"{ACCOUNTING}/periods",
+        json={"name": "Nov 2026", "start_date": "2026-11-01", "end_date": "2026-11-30"},
+        headers=h,
+    )
+    assert november.status_code == 201, november.text
     cash, expense = _cash_and_debit(owner_client)
     debt = owner_client.post(f"{FIN}/debts", json={
         "name": "Car loan", "lender": "Bank X", "principal": "120000.00", "annual_rate": "12",
@@ -219,6 +225,13 @@ def test_flow_d_bank_import_is_read_only_and_suggestions_need_confirmation(owner
     assert imported.status_code == 200, imported.text
     assert imported.json()["read_only"] is True
     account_id = owner_client.get(f"{FIN}/bank/accounts").json()[0]["id"]
+    cash, _ = _cash_and_debit(owner_client)
+    linked = owner_client.post(
+        f"{FIN}/bank/accounts/{account_id}/ledger-link",
+        json={"ledger_account_id": cash},
+        headers=h,
+    )
+    assert linked.status_code == 200, linked.text
 
     txns = owner_client.post(f"{FIN}/bank/accounts/{account_id}/transactions/import", json={
         "since": "2026-10-01", "until": "2026-10-31"}, headers=h)
