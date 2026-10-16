@@ -11,7 +11,8 @@ import uuid
 from pathlib import Path
 
 from tests.sql.test_commerce_rules import ADMIN_URI, run_psql, with_database
-from tests.sql.test_finance_rules import STUBS, load_statements as load_0004
+from tests.sql.test_finance_rules import STUBS
+from tests.sql.test_finance_rules import load_statements as load_0004
 
 BACKEND = Path(__file__).resolve().parents[2]
 MIGRATION_0007 = BACKEND / "alembic" / "versions" / "20261008_0007_finance_documents.py"

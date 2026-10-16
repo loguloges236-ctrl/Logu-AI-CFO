@@ -19,7 +19,7 @@ original. Neither the original journal nor the original settlement is changed or
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -222,7 +222,7 @@ def approve_settlement_request(db: DBSession, request: Request, auth: Authentica
         )
         req.status = "approved"
         req.settlement_id = settlement.id
-        req.decided_at = datetime.now(timezone.utc)
+        req.decided_at = datetime.now(UTC)
         db.flush()
         audit(db, request, auth, "settlement.request_approved", "settlement_request", str(req.id), {
             "settlement": str(settlement.id)})
@@ -237,7 +237,7 @@ def reject_settlement_request(db: DBSession, request: Request, auth: Authenticat
         if req.status != "pending":
             raise _rule("already_decided", "This request was already approved")
         req.status = "rejected"
-        req.decided_at = datetime.now(timezone.utc)
+        req.decided_at = datetime.now(UTC)
         db.flush()
         audit(db, request, auth, "settlement.request_rejected", "settlement_request", str(req.id), {})
     return req

@@ -7,7 +7,7 @@ Customer collections are reminded only once overdue, because the notification ki
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date
 from typing import Any
 from uuid import UUID
 
@@ -19,7 +19,13 @@ from sqlalchemy.orm import Session as DBSession
 from app.finance.domain import FinanceRuleViolation
 from app.models.commerce import DocumentProcessingJob
 from app.models.finance import Notification, ReconciliationSuggestion
-from app.notifications.domain import DuePayment, InAppChannel, Message, NotificationChannel, dedupe_key, plan_reminders
+from app.notifications.domain import (
+    DuePayment,
+    InAppChannel,
+    Message,
+    NotificationChannel,
+    dedupe_key,
+)
 from app.notifications.scheduler import CycleReport, run_reminder_cycle
 from app.services import finance as fin
 from app.services.auth import AuthenticatedSession
@@ -118,10 +124,10 @@ def list_notifications(db: DBSession, *, unread_only: bool = False, limit: int =
 
 def mark_read(db: DBSession, notification_id: UUID) -> None:
     """Only read_at can change (database trigger). Read state is not a financial mutation, so no audit event."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     with unit_of_work(db):
         result = db.execute(update(Notification).where(Notification.id == notification_id)
-                            .values(read_at=datetime.now(timezone.utc)))
+                            .values(read_at=datetime.now(UTC)))
         if result.rowcount == 0:
             raise FinanceRuleViolation("not_found", "Notification was not found")

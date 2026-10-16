@@ -11,8 +11,7 @@ Provider: any BankDataProvider. With no real provider connected, UnavailableBank
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -222,7 +221,7 @@ def list_suggestions(db: DBSession, *, status: str = "suggested", limit: int = 1
 
 
 def decide_suggestion(db: DBSession, request: Request, auth: AuthenticatedSession, suggestion_id: UUID, decision: str) -> ReconciliationSuggestion:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     if decision not in ("confirmed", "rejected"):
         raise _rule("invalid_decision", "Decision must be confirmed or rejected")
@@ -241,7 +240,7 @@ def decide_suggestion(db: DBSession, request: Request, auth: AuthenticatedSessio
             if clash is not None:
                 raise _rule("already_confirmed", "This bank transaction already has a confirmed match")
         row.status = decision
-        row.decided_at = datetime.now(timezone.utc)
+        row.decided_at = datetime.now(UTC)
         db.flush()
         audit(db, request, auth, f"reconciliation.{decision}", "reconciliation_suggestion", str(row.id), {
             "kind": row.kind, "bank_transaction": str(row.bank_transaction_id)})

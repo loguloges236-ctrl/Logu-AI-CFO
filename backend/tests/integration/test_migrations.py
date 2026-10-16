@@ -1,12 +1,12 @@
 """Migration, schema-parity and PostgreSQL-behaviour tests. Require TEST_DATABASE_URL (PostgreSQL)."""
 
 import pytest
-from alembic.autogenerate import compare_metadata
-from alembic.migration import MigrationContext
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError, IntegrityError, ProgrammingError
 
 from alembic import command
+from alembic.autogenerate import compare_metadata
+from alembic.migration import MigrationContext
 from app.db.base import Base
 from app.db.session import get_engine
 from tests.conftest import EMAIL, _alembic_config  # noqa: F401  (helper reuse)

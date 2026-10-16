@@ -45,6 +45,7 @@ from app.models.commerce import (
 )
 from app.models.entities import DocumentFile, FileScanStatus
 from app.schemas import commerce as sc
+from app.security.crypto import SensitiveDataCipher
 from app.services import commerce_catalog as catalog
 from app.services import commerce_documents as documents
 from app.services import commerce_inventory as inventory
@@ -55,7 +56,6 @@ from app.services.auth import AuthenticatedSession, get_current_auth, require_cs
 from app.services.commerce_common import CommerceRuleViolation
 from app.services.documents import get_owner_document, read_for_download
 from app.storage.local import LocalFileStorage
-from app.security.crypto import SensitiveDataCipher
 
 router = APIRouter(prefix="/commerce", tags=["commerce"])
 

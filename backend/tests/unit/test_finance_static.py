@@ -68,7 +68,6 @@ class FinanceMigrationStaticTest(unittest.TestCase):
             self.assertEqual(columns, models[name], f"column drift in {name}")
 
     def test_enum_literals_match_python_constants(self) -> None:
-        from app.bank.reconciliation import SUGGESTION_KINDS
         from app.commerce.extraction import DOCUMENT_TYPES
         from app.finance.domain import FREQUENCIES, INTEREST_TYPES, OBLIGATION_KINDS
         from app.notifications.domain import KINDS

@@ -28,9 +28,18 @@ from app.models import Quotation, QuotationLine, SalesInvoice, SalesInvoiceLine,
 from app.services import commerce_catalog as catalog
 from app.services import commerce_ledger as ledger
 from app.services.auth import AuthenticatedSession
-from app.services.commerce_common import audit, discard_draft, flush, next_number, not_found, rule, unit_of_work
+from app.services.commerce_common import (
+    audit,
+    discard_draft,
+    flush,
+    next_number,
+    not_found,
+    rule,
+    unit_of_work,
+)
 from app.services.commerce_inventory import move_stock
 from app.services.commerce_pricing import apply_totals, price_lines
+
 
 def _lock(db: DBSession, model: Any, row_id: UUID) -> Any:
     row = db.scalar(select(model).where(model.id == row_id).with_for_update())

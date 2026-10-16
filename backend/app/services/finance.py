@@ -22,7 +22,9 @@ from fastapi import Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DBSession
 
+from app.accounting.domain import CASH_AND_BANK_SUBTYPES
 from app.finance.approval import DebtDraft, ObligationDraft
+from app.finance.dashboard import DashboardInputs, build_dashboard
 from app.finance.domain import (
     CRITICAL_KINDS,
     FREQUENCIES,
@@ -33,8 +35,8 @@ from app.finance.domain import (
     DebtPlan,
     FinanceRuleViolation,
     PayItem,
-    build_schedule,
     bucket,
+    build_schedule,
     compare_strategies,
     emi_amount,
     forecast,
@@ -43,8 +45,6 @@ from app.finance.domain import (
     parse_rate,
     prioritise,
 )
-from app.finance.dashboard import DashboardInputs, build_dashboard
-from app.accounting.domain import CASH_AND_BANK_SUBTYPES
 from app.models.accounting import Account
 from app.models.commerce import Party, PurchaseBill, SalesInvoice
 from app.models.finance import (
@@ -56,7 +56,6 @@ from app.models.finance import (
     ReconciliationSuggestion,
     Settlement,
 )
-from app.notifications.domain import DuePayment
 from app.services import accounting as acc
 from app.services.auth import AuthenticatedSession
 from app.services.commerce_common import audit, unit_of_work

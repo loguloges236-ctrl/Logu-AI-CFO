@@ -6,7 +6,7 @@ import uuid
 
 from pydantic import ValidationError
 
-from app.schemas.commerce import DocLineIn, GoodsReceiptIn, ProductIn, ProcessingJobIn, ReceiptLineIn
+from app.schemas.commerce import DocLineIn, GoodsReceiptIn, ProcessingJobIn, ProductIn, ReceiptLineIn
 
 
 class CommerceSchemaTests(unittest.TestCase):

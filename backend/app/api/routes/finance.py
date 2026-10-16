@@ -17,8 +17,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session as DBSession
 
 from app.accounting.domain import AccountingRuleViolation
-from app.ai.cfo import REFUSAL, route_question
-from app.ai.cfo import AIRuleViolation
+from app.ai.cfo import REFUSAL, AIRuleViolation, route_question
 from app.ai.executor import execute_tool
 from app.bank.providers import BankDataProvider, UnavailableBankProvider
 from app.core.errors import APIError
