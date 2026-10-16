@@ -1,0 +1,26 @@
+{
+  "name": "logu-ai-cfo-frontend",
+  "private": true,
+  "version": "0.2.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "15.3.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.6",
+    "@types/react-dom": "19.1.6",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.3.4",
+    "typescript": "5.8.3"
+  }
+}

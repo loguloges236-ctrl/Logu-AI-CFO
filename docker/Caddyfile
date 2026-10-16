@@ -1,0 +1,49 @@
+# Public edge (Caddy 2.8). Single trusted reverse proxy in front of the stack.
+#
+# SITE_ADDRESS
+#   - Local/testing: http://localhost  -> plain HTTP, no certificate, no redirect.
+#   - Production:    https://cfo.example.com -> automatic TLS (Let's Encrypt). Caddy itself
+#                    redirects port 80 to 443. The application never issues redirects, so
+#                    there is no HTTP<->HTTPS loop: the backend trusts X-Forwarded-Proto
+#                    only from this container (TRUSTED_PROXY_NETWORKS) and then enforces
+#                    FORCE_HTTPS against that value.
+#
+# Forwarded headers
+#   Caddy OVERWRITES the forwarded headers rather than appending to client-supplied ones:
+#     X-Forwarded-For   = the TCP peer address Caddy actually saw ({remote_host})
+#     X-Forwarded-Proto = the scheme the client used to reach Caddy ({scheme})
+#     X-Forwarded-Host  = the Host the client requested ({host})
+#   A client-supplied X-Forwarded-For / X-Forwarded-Proto therefore never reaches the API.
+#
+# Routing
+#   /api/*  -> backend  (FastAPI, prefix /api/v1)
+#   else    -> frontend (Next.js standalone server)
+#   /health endpoints are internal only and are intentionally not routed here.
+{$SITE_ADDRESS:http://localhost} {
+	encode zstd gzip
+
+	# Do not advertise the server software.
+	header -Server
+
+	handle /api/* {
+		# Keep this at or above MAX_UPLOAD_BYTES (default 25 MiB) plus multipart overhead.
+		# The backend still enforces the exact limit; this is a coarse outer bound.
+		request_body {
+			max_size 30MB
+		}
+
+		reverse_proxy backend:8000 {
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+		}
+	}
+
+	handle {
+		reverse_proxy frontend:3000 {
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+		}
+	}
+}

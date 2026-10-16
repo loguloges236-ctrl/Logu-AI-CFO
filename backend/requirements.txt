@@ -1,0 +1,9 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+SQLAlchemy==2.0.41
+psycopg[binary]==3.2.9
+alembic==1.15.2
+pydantic-settings==2.9.1
+argon2-cffi==23.1.0
+cryptography==45.0.3
+python-multipart==0.0.20

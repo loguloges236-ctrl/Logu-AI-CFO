@@ -1,0 +1,10 @@
+.env
+.env.*
+runtime/
+**/__pycache__/
+*.pyc
+*.db
+.pytest_cache/
+.ruff_cache/
+.coverage
+tests/
