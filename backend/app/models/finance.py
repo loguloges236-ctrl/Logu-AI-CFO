@@ -130,7 +130,7 @@ class BankAccount(Base):
     provider: Mapped[str] = mapped_column(String(40), nullable=False)
     external_ref: Mapped[str] = mapped_column(String(120), nullable=False)
     display_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="INR")
+    currency: Mapped[str] = mapped_column(CHAR(3), nullable=False, server_default="INR")
     ledger_account_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("accounts.id", ondelete="RESTRICT")
     )
