@@ -52,62 +52,59 @@ jobs:
           archive="Logu-AI-CFO-clean-upload.zip"
           if [[ -f "$archive" ]]; then
             python - <<'PY'
-            from pathlib import Path, PurePosixPath
-            from zipfile import ZipFile
-            import shutil
-            import stat
+from pathlib import Path, PurePosixPath
+from zipfile import ZipFile
+import shutil
+import stat
 
-            archive = Path("Logu-AI-CFO-clean-upload.zip")
-            root = Path.cwd().resolve()
-            blocked_parts = {
-                ".git", ".github", "node_modules", ".next", "__pycache__",
-                ".pytest_cache", ".ruff_cache", ".venv", "venv", "__pypackages__",
-            }
-            blocked_names = {
-                "credentials.json", "secrets.json", ".neon_url.txt",
-            }
-            total = 0
-            restored = 0
-            with ZipFile(archive) as z:
-                infos = z.infolist()
-                if sum(i.file_size for i in infos) > 50 * 1024 * 1024:
-                    raise SystemExit("Refusing an archive exceeding the 50 MiB source limit.")
-                for info in infos:
-                    if info.is_dir():
-                        continue
-                    rel = PurePosixPath(info.filename)
-                    if rel.is_absolute() or not rel.parts or any(p in {"", ".", ".."} for p in rel.parts):
-                        raise SystemExit(f"Unsafe archive path rejected: {info.filename!r}")
-                    if stat.S_ISLNK(info.external_attr >> 16):
-                        print(f"Skipping symlink: {info.filename}")
-                        continue
-                    if any(p in blocked_parts for p in rel.parts):
-                        continue
-                    name = rel.name
-                    if name in blocked_names:
-                        print(f"Skipping sensitive/local file: {info.filename}")
-                        continue
-                    if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
-                        print(f"Skipping environment secret file: {info.filename}")
-                        continue
-                    if name.endswith((".pem", ".key", ".pyc", ".pyo")):
-                        print(f"Skipping sensitive/generated file: {info.filename}")
-                        continue
-                    target = (root / Path(*rel.parts)).resolve()
-                    if root not in target.parents:
-                        raise SystemExit(f"Archive path escaped repository root: {info.filename!r}")
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    with z.open(info) as src, target.open("wb") as dst:
-                        shutil.copyfileobj(src, dst)
-                    total += info.file_size
-                    restored += 1
-            print(f"Restored {restored} source files ({total:,} bytes); archive paths and secret patterns were filtered.")
-            PY
+archive = Path("Logu-AI-CFO-clean-upload.zip")
+root = Path.cwd().resolve()
+blocked_parts = {
+    ".git", ".github", "node_modules", ".next", "__pycache__",
+    ".pytest_cache", ".ruff_cache", ".venv", "venv", "__pypackages__",
+}
+blocked_names = {"credentials.json", "secrets.json", ".neon_url.txt"}
+total = 0
+restored = 0
+with ZipFile(archive) as z:
+    infos = z.infolist()
+    if sum(i.file_size for i in infos) > 50 * 1024 * 1024:
+        raise SystemExit("Refusing an archive exceeding the 50 MiB source limit.")
+    for info in infos:
+        if info.is_dir():
+            continue
+        rel = PurePosixPath(info.filename)
+        if rel.is_absolute() or not rel.parts or any(p in {"", ".", ".."} for p in rel.parts):
+            raise SystemExit(f"Unsafe archive path rejected: {info.filename!r}")
+        if stat.S_ISLNK(info.external_attr >> 16):
+            print(f"Skipping symlink: {info.filename}")
+            continue
+        if any(p in blocked_parts for p in rel.parts):
+            continue
+        name = rel.name
+        if name in blocked_names:
+            print(f"Skipping sensitive/local file: {info.filename}")
+            continue
+        if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
+            print(f"Skipping environment secret file: {info.filename}")
+            continue
+        if name.endswith((".pem", ".key", ".pyc", ".pyo")):
+            print(f"Skipping sensitive/generated file: {info.filename}")
+            continue
+        target = (root / Path(*rel.parts)).resolve()
+        if root not in target.parents:
+            raise SystemExit(f"Archive path escaped repository root: {info.filename!r}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with z.open(info) as src, target.open("wb") as dst:
+            shutil.copyfileobj(src, dst)
+        total += info.file_size
+        restored += 1
+print(f"Restored {restored} source files ({total:,} bytes); archive paths and secret patterns were filtered.")
+PY
           else
             echo "Source archive is absent; validating the existing repository."
           fi
 
-          # Generate the missing npm lockfile using the hosted runner's registry access.
           if [[ -f frontend/package.json ]]; then
             if (cd frontend && npm install --package-lock-only --ignore-scripts --no-audit --no-fund); then
               echo "Frontend package-lock.json generated."
@@ -116,7 +113,6 @@ jobs:
             fi
           fi
 
-          # The ZIP is a transport artifact, not source code. Remove it after a successful import.
           if [[ -f frontend/package.json && -f backend/requirements.txt ]]; then
             rm -f "$archive"
           fi
