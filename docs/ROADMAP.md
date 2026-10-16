@@ -60,7 +60,7 @@ The verified workflow on 16 October 2026 completed all steps successfully:
 13. Docker Compose configuration validation.
 14. Backend and frontend Docker image builds.
 
-A separate container security workflow now rebuilds both application images on pushes, pull requests, and weekly, then scans OS/library dependencies for known critical vulnerabilities. The workflow uses the current versioned Trivy action release. Weekly Dependabot updates are grouped for non-major changes to reduce review noise. It fails the scan job on critical findings after excluding vulnerabilities without a fix, and uploads SARIF results to GitHub code scanning when repository permissions/settings allow. Weekly Dependabot updates are configured for Python, npm, Docker base images, and GitHub Actions.
+A separate container security workflow now rebuilds both application images on pushes, pull requests, and weekly, then scans OS/library dependencies for known critical vulnerabilities. The workflow uses the current versioned Trivy action release. Weekly Dependabot updates are grouped for non-major changes to reduce review noise. It prints actionable findings directly in CI logs and fails the scan job on critical findings after excluding vulnerabilities without a fix. The first completed scan on 16 October 2026 passed for both application images. Weekly Dependabot updates are configured for Python, npm, Docker base images, and GitHub Actions.
 
 ## Known security and deployment limitations
 
