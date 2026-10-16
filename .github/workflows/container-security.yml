@@ -12,6 +12,11 @@ on:
 permissions:
   contents: read
 
+# Superseded pull-request runs are cancelled; scheduled and main runs are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build-and-scan:
     name: Build and scan application images
@@ -19,7 +24,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Build backend image
         run: docker build --pull -t logu-ai-cfo-backend:scan ./backend
@@ -28,7 +33,7 @@ jobs:
         run: docker build --pull -t logu-ai-cfo-frontend:scan ./frontend
 
       - name: Scan backend image for critical vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: logu-ai-cfo-backend:scan
           format: table
@@ -38,7 +43,7 @@ jobs:
           exit-code: "1"
 
       - name: Scan frontend image for critical vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: logu-ai-cfo-frontend:scan
           format: table
@@ -46,3 +51,28 @@ jobs:
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+
+      # Informational only: HIGH findings are listed in the log so they can be triaged, but they do not
+      # fail the job. CRITICAL findings above remain the blocking gate. These steps run even when the
+      # gate fails so the full picture is visible.
+      - name: Report HIGH findings in backend image (informational)
+        if: ${{ always() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: logu-ai-cfo-backend:scan
+          format: table
+          vuln-type: os,library
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+
+      - name: Report HIGH findings in frontend image (informational)
+        if: ${{ always() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: logu-ai-cfo-frontend:scan
+          format: table
+          vuln-type: os,library
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
