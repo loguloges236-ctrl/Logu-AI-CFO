@@ -139,7 +139,7 @@ class StockMovement(Base):
     )
 
     id: Mapped[uuid.UUID] = _uid(primary=True)
-    seq: Mapped[int] = mapped_column(BigInteger, Identity(), unique=True, nullable=False)
+    seq: Mapped[int] = mapped_column(BigInteger, Identity(always=True), unique=True, nullable=False)
     product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"), nullable=False)
     location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("stock_locations.id", ondelete="RESTRICT"), nullable=False)
     movement_type: Mapped[str] = mapped_column(String(20), nullable=False)
