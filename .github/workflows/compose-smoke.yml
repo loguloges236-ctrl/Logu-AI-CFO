@@ -72,17 +72,28 @@ jobs:
         run: |
           set -euo pipefail
           ready=0
-          for attempt in $(seq 1 180); do
+          for attempt in $(seq 1 90); do
             if docker compose exec -T backend python -c "import urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3); assert r.status == 200" >/dev/null 2>&1; then
               ready=1
               break
             fi
-            sleep 4
+            sleep 2
           done
           if [[ "$ready" != "1" ]]; then
             docker compose ps
             docker compose logs --no-color --tail=200
-            echo 'Backend did not become ready within 12 minutes.' >&2
+            echo 'Backend did not become ready within 3 minutes. Direct database probe follows:' >&2
+            docker compose exec -T backend python - <<'PY'
+          from sqlalchemy import text
+          from app.db.session import get_session_factory
+          try:
+              with get_session_factory()() as db:
+                  print('database SELECT 1:', db.execute(text('SELECT 1')).scalar_one())
+          except Exception as exc:
+              print('database probe failed:', type(exc).__name__, str(exc))
+              raise
+          PY
+            docker compose exec -T backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"
             exit 1
           fi
           page=0
