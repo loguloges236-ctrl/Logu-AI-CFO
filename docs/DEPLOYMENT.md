@@ -5,7 +5,7 @@
 | Service | Image / build | Network | Notes |
 |---|---|---|---|
 | `db` | postgres:16-alpine | data (internal) | Not published |
-| `clamav` | clamav/clamav:1.4 | app (internal) | Not published; signature updates need outbound access |
+| `clamav` | clamav/clamav:1.4 | data (internal) + updates (outbound egress only) | Not published; only ClamAV has external egress for signature refresh |
 | `migrate` | backend image | data, app | Runs `alembic upgrade head`, then exits |
 | `backend` | backend Dockerfile | app, data | Read-only root filesystem, `tmpfs /tmp`, `cap_drop: ALL`, non-root user |
 | `frontend` | frontend Dockerfile | app | Standalone Next.js server, uid 1001 |
