@@ -115,6 +115,8 @@ def validate_settings(
             errors.append("COOKIE_SECURE must be true in staging/production")
         if not hosts:
             errors.append("TRUSTED_HOSTS is required in staging/production")
+        if not origins:
+            errors.append("FRONTEND_ORIGINS is required in staging/production")
         if any(host in _LOCAL_HOSTS or host == "*" for host in hosts):
             errors.append("TRUSTED_HOSTS must list only the public hostname(s) in production")
         if not hmac_key:
