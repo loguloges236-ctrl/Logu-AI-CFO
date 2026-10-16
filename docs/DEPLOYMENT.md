@@ -18,8 +18,9 @@ Networks: `data` and `app` are internal; `public` is the only route to the host,
 Copy `.env.example` to `.env`. Required secrets (placeholders in the example):
 
 - `DATABASE_URL` (PostgreSQL only)
-- `FIELD_ENCRYPTION_KEY` (Fernet key; validated at startup)
-- `SECURITY_HMAC_KEY` (required in production)
+- `DATA_ENCRYPTION_KEY` (Fernet key for document blobs and sensitive fields; losing it makes encrypted data unrecoverable)
+- `SECURITY_HMAC_KEY` (required in staging/production)
+- `POSTGRES_PASSWORD` (same password used by the Compose database and application URL)
 - `TRUSTED_HOSTS`, `FRONTEND_ORIGINS`
 - `TRUSTED_PROXY_NETWORKS` (set to `172.28.10.10/32` in compose)
 - `BOOTSTRAP_TOKEN` (only while bootstrapping; disabled in production)
@@ -32,6 +33,16 @@ Production validation (`core/settings_validation.py`) refuses to start when a re
 2. `docker compose run --rm migrate` (or let `migrate` run with the stack)
 3. Create the owner with the bootstrap flow, then disable bootstrap. Alternatively, set the owner password with `python -m app.cli reset-owner-password --email <address>` inside the backend container.
 4. `docker compose up -d backend frontend caddy`
+
+## Backup and restore
+
+The repository includes guarded scripts for PostgreSQL and uploaded-document backups. These contain sensitive financial and document data. Store backup bundles encrypted, restrict access, and keep at least one copy off the server. Never commit backups or `.env` files.
+
+1. Put the application into a maintenance window and stop user writes before backing up so database rows and upload blobs represent the same point in time. Keep the backend running for the upload-volume read step, but keep public traffic disabled at the edge.
+2. Run `./scripts/backup.sh` from the repository root. It writes a timestamped directory under `backups/`, sets restrictive permissions, and creates SHA-256 checksums for `database.dump` and `uploads.tar.gz`.
+3. Copy the whole backup directory to encrypted off-host storage. The script does not encrypt the bundle itself and does not copy `.env` or encryption keys.
+4. To restore, first ensure the target server is in a maintenance window and you have a verified, separately secured copy of the original data and the matching `DATA_ENCRYPTION_KEY`. Run `./scripts/restore.sh /path/to/logu-cfo-YYYYMMDDTHHMMSSZ` and type `RESTORE` at the explicit confirmation prompt. This replaces the target database and overlays the upload volume. If the backend fails its health check, the script leaves frontend and Caddy stopped for investigation.
+5. After restore, verify `/health/ready`, owner sign-in, document access/decryption, malware-scan state, ledger balances, and audit history before reopening traffic. A checksum verifies file integrity, not that a backup is logically complete; rehearse restores before relying on them.
 
 ## Operations
 
