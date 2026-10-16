@@ -742,6 +742,7 @@ export function IntakeDetailView({ jobId }: { jobId: string }) {
   const editable = job.status === "needs_review" || job.status === "ready";
   const canDecide = job.status === "needs_review" || job.status === "ready";
   const approveDisabled = blocking.length > 0 || (needsAck && !ack);
+  const financeLink = approved ? FINANCE_LINKS[approved.type] : undefined;
 
   return (
     <>
@@ -805,8 +806,8 @@ export function IntakeDetailView({ jobId }: { jobId: string }) {
       {approved && (
         <section className="settings-card">
           <p className="small">Approved as {approved.type.replaceAll("_", " ")}.</p>
-          {FINANCE_LINKS[approved.type] ? (
-            <Link href={FINANCE_LINKS[approved.type].href}>Open in Finance: {FINANCE_LINKS[approved.type].label}</Link>
+          {financeLink ? (
+            <Link href={financeLink.href}>Open in Finance: {financeLink.label}</Link>
           ) : (
             <p className="hint">Review and post the draft from its screen.</p>
           )}
