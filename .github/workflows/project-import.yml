@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   import-and-validate:
-    if: ${{ github.event_name != 'push' || (github.event.head_commit.message != 'Import Logu AI CFO project source' && github.event.head_commit.message != 'Apply Ruff autofixes') }}
+    if: ${{ github.event_name != 'push' || (github.event.head_commit.message != 'Import Logu AI CFO project source' && github.event.head_commit.message != 'Apply Ruff autofixes' && github.event.head_commit.message != 'Refresh frontend dependency lockfile') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     services:
@@ -105,6 +105,10 @@ jobs:
             git push origin HEAD:main
           fi
 
+      - name: Audit backend dependencies
+        working-directory: backend
+        run: python -m pip_audit -r requirements.txt
+
       - name: Run Ruff
         if: ${{ hashFiles('backend/app/**/*.py') != '' && hashFiles('backend/tests/**/*.py') != '' }}
         working-directory: backend
@@ -122,10 +126,33 @@ jobs:
           TEST_DATABASE_URL: postgresql+psycopg://logu:logu-ci-test-password@localhost:5432/logu_test
         run: python -m pytest tests/integration -q
 
+      - name: Refresh frontend lockfile for pinned packages
+        if: ${{ hashFiles('frontend/package.json') != '' }}
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Frontend lockfile already matches package.json."
+          else
+            git commit -m "Refresh frontend dependency lockfile"
+            git push origin HEAD:main
+          fi
+
       - name: Install frontend dependencies
         if: ${{ hashFiles('frontend/package.json') != '' }}
         working-directory: frontend
         run: npm ci
+
+      - name: Audit frontend dependencies
+        if: ${{ hashFiles('frontend/package.json') != '' }}
+        working-directory: frontend
+        run: npm audit --audit-level=high
 
       - name: Lint frontend
         if: ${{ hashFiles('frontend/package.json') != '' }}
