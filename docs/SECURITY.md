@@ -41,7 +41,7 @@ This document describes what the code does. Items marked **limitation** are know
 ## API surface
 
 - OpenAPI/Swagger documentation is served only when the environment is `development`.
-- CORS is enabled only when `FRONTEND_ORIGINS` is set.
+- CORS is enabled only when `FRONTEND_ORIGINS` is set. In staging/production it is required (startup validation fails when it is empty) and must list exact `https://` origins; in development/test it may stay empty for same-origin use.
 - Validation errors do not echo submitted values. Unhandled exceptions return a generic 500.
 - Access logging is disabled (**limitation**: operational logs contain fewer request details).
 

@@ -96,6 +96,10 @@ class SettingsValidationTests(unittest.TestCase):
             errors = validate_settings(base(trusted_hosts=hosts))
             self.assertTrue(any("TRUSTED_HOSTS" in e for e in errors), hosts)
 
+    def test_production_requires_at_least_one_frontend_origin(self):
+        errors = validate_settings(base(frontend_origins=[]))
+        self.assertTrue(any("FRONTEND_ORIGINS is required" in e for e in errors))
+
     def test_production_requires_exact_https_origins(self):
         errors = validate_settings(base(frontend_origins=["http://cfo.example.com"]))
         self.assertTrue(any("FRONTEND_ORIGINS" in e for e in errors))
