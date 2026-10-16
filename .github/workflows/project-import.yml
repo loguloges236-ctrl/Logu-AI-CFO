@@ -88,15 +88,15 @@ jobs:
             exit 1
           fi
 
-      - name: Apply safe Ruff fixes and commit source cleanups
+      - name: Apply Ruff autofixes and commit source cleanups
         working-directory: backend
         shell: bash
         run: |
           set -euo pipefail
-          if python -m ruff check app tests alembic --fix; then
+          if python -m ruff check app tests alembic --fix --unsafe-fixes; then
             echo "No Ruff autofixes needed."
           else
-            echo "Ruff found remaining diagnostics after applying available safe fixes."
+            echo "Ruff found remaining diagnostics after all configured automatic fixes."
           fi
           cd ..
           git config user.name "github-actions[bot]"
