@@ -172,6 +172,10 @@ jobs:
           API_INTERNAL_URL: http://127.0.0.1:8000
         run: npm run build --if-present
 
+      - name: Validate operational shell scripts
+        shell: bash
+        run: bash -n scripts/backup.sh scripts/restore.sh
+
       - name: Validate Docker Compose configuration
         if: ${{ hashFiles('docker-compose.yml') != '' || hashFiles('compose.yml') != '' }}
         shell: bash
