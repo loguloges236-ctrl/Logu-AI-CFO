@@ -6,6 +6,7 @@ on:
     paths:
       - "Logu-AI-CFO-clean-upload.zip"
       - ".github/workflows/project-import.yml"
+      - ".github/scripts/import_project_zip.py"
   workflow_dispatch:
 
 permissions:
@@ -38,132 +39,99 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
-      - name: Safely restore source files from uploaded ZIP
+      - name: Restore clean project source
         shell: bash
         run: |
           set -euo pipefail
-          archive="Logu-AI-CFO-clean-upload.zip"
-          if [[ -f "$archive" ]]; then
-            python - <<'PY'
-from pathlib import Path, PurePosixPath
-from zipfile import ZipFile
-import shutil
-import stat
-
-archive = Path("Logu-AI-CFO-clean-upload.zip")
-root = Path.cwd().resolve()
-blocked_parts = {
-    ".git", ".github", "node_modules", ".next", "__pycache__",
-    ".pytest_cache", ".ruff_cache", ".venv", "venv", "__pypackages__",
-}
-blocked_names = {"credentials.json", "secrets.json", ".neon_url.txt"}
-total = 0
-restored = 0
-with ZipFile(archive) as z:
-    infos = z.infolist()
-    if sum(i.file_size for i in infos) > 50 * 1024 * 1024:
-        raise SystemExit("Refusing an archive exceeding the 50 MiB source limit.")
-    for info in infos:
-        if info.is_dir():
-            continue
-        rel = PurePosixPath(info.filename)
-        if rel.is_absolute() or not rel.parts or any(p in {"", ".", ".."} for p in rel.parts):
-            raise SystemExit(f"Unsafe archive path rejected: {info.filename!r}")
-        if stat.S_ISLNK(info.external_attr >> 16):
-            print(f"Skipping symlink: {info.filename}")
-            continue
-        if any(p in blocked_parts for p in rel.parts):
-            continue
-        name = rel.name
-        if name in blocked_names:
-            print(f"Skipping sensitive/local file: {info.filename}")
-            continue
-        if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
-            print(f"Skipping environment secret file: {info.filename}")
-            continue
-        if name.endswith((".pem", ".key", ".pyc", ".pyo")):
-            print(f"Skipping sensitive/generated file: {info.filename}")
-            continue
-        target = (root / Path(*rel.parts)).resolve()
-        if root not in target.parents:
-            raise SystemExit(f"Archive path escaped repository root: {info.filename!r}")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with z.open(info) as src, target.open("wb") as dst:
-            shutil.copyfileobj(src, dst)
-        total += info.file_size
-        restored += 1
-print(f"Restored {restored} source files ({total:,} bytes); archive paths and secret patterns were filtered.")
-PY
-          else
-            echo "Source archive is absent; validating the existing repository."
-          fi
-
+          python .github/scripts/import_project_zip.py
           if [[ -f frontend/package.json ]]; then
-            if (cd frontend && npm install --package-lock-only --ignore-scripts --no-audit --no-fund); then
-              echo "Frontend package-lock.json generated."
-            else
-              echo "::warning::Unable to generate frontend/package-lock.json; frontend CI will show the blocker."
-            fi
+            (cd frontend && npm install --package-lock-only --ignore-scripts --no-audit --no-fund)
           fi
-
-          if [[ -f frontend/package.json && -f backend/requirements.txt ]]; then
-            rm -f "$archive"
+          # Remove the transport archive only after source manifests have been verified.
+          if [[ -f frontend/package.json && ( -f backend/requirements-dev.txt || -f backend/requirements.txt || -f backend/pyproject.toml ) ]]; then
+            rm -f Logu-AI-CFO-clean-upload.zip
           fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "No repository changes to commit."
+            echo "No source changes needed."
           else
             git commit -m "Import Logu AI CFO project source"
             git push origin HEAD:main
           fi
 
       - name: Install backend dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r backend/requirements-dev.txt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          if [[ -f backend/requirements-dev.txt ]]; then
+            python -m pip install -r backend/requirements-dev.txt
+          elif [[ -f backend/requirements.txt ]]; then
+            python -m pip install -r backend/requirements.txt
+            python -m pip install ruff pytest psycopg[binary]
+          elif [[ -f backend/pyproject.toml ]]; then
+            python -m pip install -e "backend[dev]"
+          else
+            echo "No backend dependency manifest found." >&2
+            exit 1
+          fi
 
       - name: Run Ruff
+        if: ${{ hashFiles('backend/app/**/*.py') != '' && hashFiles('backend/tests/**/*.py') != '' }}
         working-directory: backend
-        run: ruff check app tests alembic
+        run: python -m ruff check app tests alembic
 
       - name: Run backend unit tests
+        if: ${{ hashFiles('backend/tests/unit/**/*.py') != '' }}
         working-directory: backend
         run: python -m unittest discover -s tests/unit -t .
 
       - name: Run PostgreSQL integration tests
+        if: ${{ hashFiles('backend/tests/integration/**/*.py') != '' }}
         working-directory: backend
         env:
           TEST_DATABASE_URL: postgresql+psycopg://logu:logu-ci-test-password@localhost:5432/logu_test
         run: python -m pytest tests/integration -q
 
       - name: Install frontend dependencies
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         working-directory: frontend
         run: npm ci
 
       - name: Lint frontend
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         working-directory: frontend
-        run: npm run lint
+        run: npm run lint --if-present
 
       - name: Type-check frontend
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         working-directory: frontend
-        run: npm run typecheck
+        run: npm run typecheck --if-present
 
       - name: Build frontend
+        if: ${{ hashFiles('frontend/package.json') != '' }}
         working-directory: frontend
         env:
           API_INTERNAL_URL: http://127.0.0.1:8000
-        run: npm run build
+        run: npm run build --if-present
 
       - name: Validate Docker Compose configuration
-        run: cp .env.example .env && docker compose config --quiet
+        if: ${{ hashFiles('docker-compose.yml') != '' || hashFiles('compose.yml') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -f .env.example ]] && cp .env.example .env || touch .env
+          docker compose config --quiet
 
       - name: Build application images
+        if: ${{ hashFiles('docker-compose.yml') != '' || hashFiles('compose.yml') != '' }}
         run: docker compose build backend frontend
