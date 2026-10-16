@@ -15,6 +15,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
+    CHAR,
     Date,
     DateTime,
     ForeignKey,
@@ -81,7 +82,7 @@ class PaymentObligation(Base):
     counterparty: Mapped[str | None] = mapped_column(String(160))
     amount: Mapped[Decimal] = mapped_column(MONEY, nullable=False)
     rate: Mapped[Decimal | None] = mapped_column(RATE)
-    currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="INR")
+    currency: Mapped[str] = mapped_column(CHAR(3), nullable=False, server_default="INR")
     frequency: Mapped[str] = mapped_column(String(10), nullable=False)
     first_due_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date | None] = mapped_column(Date)
