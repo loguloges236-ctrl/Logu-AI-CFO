@@ -100,4 +100,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    raise RuntimeError("Destructive downgrade is refused. Restore from backup instead.")
+    raise RuntimeError("Downgrade is disabled: destructive downgrade is refused. Restore from backup instead.")
