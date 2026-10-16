@@ -52,8 +52,8 @@ class CommerceRouteGuardTests(unittest.TestCase):
             )
 
     def test_every_state_changing_route_requires_csrf(self):
-        for node, _method, path in self.routes:
-            if _method in MUTATING:
+        for node, method, path in self.routes:
+            if method in MUTATING:
                 deps = " ".join(_dependency_names(node))
                 self.assertIn("require_csrf", deps, f"{method.upper()} {path} ({node.name}) lacks CSRF")
 
@@ -63,7 +63,7 @@ class CommerceRouteGuardTests(unittest.TestCase):
             self.assertNotRegex(code, pattern)
 
     def test_no_route_is_public(self):
-        for node, method, path in self.routes:
+        for node, _method, path in self.routes:
             self.assertNotIn(node.name, {"health", "login", "public"}, path)
 
 
