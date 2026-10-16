@@ -58,7 +58,7 @@ This document describes what the code does. Items marked **limitation** are know
 
 ## Encryption at rest
 
-- Fernet (AES-128-CBC with HMAC-SHA256) via `SensitiveDataCipher`, keyed by `FIELD_ENCRYPTION_KEY`. The same key is used for document blobs and sensitive text fields.
+- Fernet (AES-128-CBC with HMAC-SHA256) via `SensitiveDataCipher`, keyed by `DATA_ENCRYPTION_KEY`. The same key is used for document blobs and sensitive text fields.
 - Key validation rejects malformed keys at startup.
 - **Limitation:** one key protects both fields and files, and there is no key rotation procedure yet.
 
@@ -87,7 +87,7 @@ This document describes what the code does. Items marked **limitation** are know
 4. Database superuser can bypass audit triggers.
 5. CSP keeps `'unsafe-inline'` for scripts.
 6. Access logs are disabled.
-7. Python runtime dependency audit and production npm dependency audit pass in CI. The full npm development dependency tree still reports high-severity GHSA-vfj7-8cjw-p6xm for `braces`, pulled transitively through the ESLint/Next lint toolchain. As of 16 October 2026 the advisory lists no patched upstream release. CI therefore gates `npm audit --omit=dev --audit-level=high` and documents this development-tooling limitation rather than applying a risky major downgrade. Trivy/container vulnerability scanning is not yet part of CI.
+7. Python runtime dependency audit and production npm dependency audit pass in CI. The full npm development dependency tree still reports high-severity GHSA-vfj7-8cjw-p6xm for `braces`, pulled transitively through the ESLint/Next lint toolchain. As of 16 October 2026 the advisory lists no patched upstream release. CI therefore gates `npm audit --omit=dev --audit-level=high` and documents this development-tooling limitation rather than applying a risky major downgrade. A dedicated Trivy container-image scan is part of CI and blocks images with known critical OS/library vulnerabilities when a fix is available.
 8. `frontend/package-lock.json` is committed; `npm ci`, lint, typecheck, and production build pass in CI.
 9. Cross-owner authorisation tests are not meaningful under the single-owner schema.
 
