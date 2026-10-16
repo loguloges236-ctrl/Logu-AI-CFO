@@ -418,10 +418,8 @@ def upcoming_obligations(db: DBSession, today: date, cash_available: Decimal | N
 def _open_documents(db: DBSession, direction: str) -> list[dict[str, Any]]:
     if direction == RECEIVABLE:
         model, id_column = SalesInvoice, Settlement.sales_invoice_id
-        doc_column = SalesInvoice.id
     else:
         model, id_column = PurchaseBill, Settlement.purchase_bill_id
-        doc_column = PurchaseBill.id
     docs = list(db.scalars(select(model).where(model.status == "posted").order_by(model.due_date)))
     if not docs:
         return []
