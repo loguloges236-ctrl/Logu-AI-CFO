@@ -3,10 +3,6 @@ name: Import Logu AI CFO source and validate
 on:
   push:
     branches: [main]
-    paths:
-      - "Logu-AI-CFO-clean-upload.zip"
-      - ".github/workflows/project-import.yml"
-      - ".github/scripts/import_project_zip.py"
   workflow_dispatch:
 
 permissions:
@@ -14,7 +10,7 @@ permissions:
 
 jobs:
   import-and-validate:
-    if: ${{ github.event_name != 'push' || (github.event.head_commit.message != 'Import Logu AI CFO project source' && github.event.head_commit.message != 'Apply safe Ruff fixes') }}
+    if: ${{ github.event_name != 'push' || (github.event.head_commit.message != 'Import Logu AI CFO project source' && github.event.head_commit.message != 'Apply Ruff autofixes') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     services:
@@ -105,7 +101,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No lint-driven source changes to commit."
           else
-            git commit -m "Apply safe Ruff fixes"
+            git commit -m "Apply Ruff autofixes"
             git push origin HEAD:main
           fi
 
