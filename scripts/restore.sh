@@ -27,6 +27,10 @@ if tar -tzf "$BACKUP/uploads.tar.gz" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
   echo "ERROR: upload archive contains an unsafe path." >&2
   exit 2
 fi
+if ! tar -tzf "$BACKUP/uploads.tar.gz" | awk '$0 == "uploads" || $0 ~ /^uploads\// { next } { bad = 1 } END { exit bad }'; then
+  echo "ERROR: upload archive contains entries outside the uploads directory." >&2
+  exit 2
+fi
 if [[ ! -f .env ]] || ! docker compose config --quiet; then
   echo "ERROR: .env missing or Docker Compose configuration invalid." >&2
   exit 2
