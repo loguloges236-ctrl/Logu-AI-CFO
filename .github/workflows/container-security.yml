@@ -29,7 +29,7 @@ jobs:
         run: docker build --pull -t logu-ai-cfo-frontend:scan ./frontend
 
       - name: Scan backend image for critical vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: logu-ai-cfo-backend:scan
           format: sarif
@@ -40,7 +40,7 @@ jobs:
           exit-code: "1"
 
       - name: Scan frontend image for critical vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: logu-ai-cfo-frontend:scan
           format: sarif
