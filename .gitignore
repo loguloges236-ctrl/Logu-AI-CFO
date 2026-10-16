@@ -40,3 +40,6 @@ secrets.json
 
 # Local deployment/connection details
 .neon_url.txt
+
+# Sensitive operational backups (never commit database or uploaded documents)
+backups/
