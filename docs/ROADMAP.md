@@ -60,7 +60,7 @@ The verified workflow on 16 October 2026 completed all steps successfully:
 13. Docker Compose configuration validation.
 14. Backend and frontend Docker image builds.
 
-A separate container security workflow now rebuilds both application images on pushes, pull requests, and weekly, then scans OS/library dependencies for known critical vulnerabilities. It fails the scan job on critical findings after excluding vulnerabilities without a fix, and uploads SARIF results to GitHub code scanning when repository permissions/settings allow. Weekly Dependabot updates are configured for Python, npm, Docker base images, and GitHub Actions.
+A separate container security workflow now rebuilds both application images on pushes, pull requests, and weekly, then scans OS/library dependencies for known critical vulnerabilities. The workflow uses the current versioned Trivy action release. Weekly Dependabot updates are grouped for non-major changes to reduce review noise. It fails the scan job on critical findings after excluding vulnerabilities without a fix, and uploads SARIF results to GitHub code scanning when repository permissions/settings allow. Weekly Dependabot updates are configured for Python, npm, Docker base images, and GitHub Actions.
 
 ## Known security and deployment limitations
 
@@ -68,13 +68,13 @@ A separate container security workflow now rebuilds both application images on p
 - Voice biometric unlock/enrolment/anti-spoofing is not implemented.
 - Password reset delivery over email/SMS is not integrated; recovery is operator-run.
 - The project has not been deployed to a live server. Target DNS/TLS, real secrets, persistent upload storage, real ClamAV scanning, backup/restore, and production monitoring need environment-specific acceptance tests.
-- No load test or recovery drill is currently part of CI.
+- No load test or recovery drill is currently part of CI. Guarded PostgreSQL/upload backup and restore scripts are now included, but a real restore rehearsal is still required before production.
 - Database-level role separation, field/file key rotation, nonce-based CSP, and operational access logs remain hardening work.
 
 ## Recommended next steps
 
 1. Deploy first to a private staging server; generate and store secrets securely and keep edge ports bound to loopback until a reverse proxy/TLS plan is configured.
 2. Run first-start and owner-bootstrap steps from [Deployment](DEPLOYMENT.md), verify /health/ready, upload/scan/download a harmless test document, and test recovery/revocation.
-3. Rehearse PostgreSQL and upload-volume backups and restore.
+3. Use `scripts/backup.sh` and `scripts/restore.sh` for a controlled rehearsal on a disposable staging environment; verify encrypted documents and accounting balances before production.
 4. Run the new container scan workflow and address any critical image findings before staging.
 5. Reassess the braces advisory when upstream publishes a patch; do not use npm audit fix --force just to silence it.
