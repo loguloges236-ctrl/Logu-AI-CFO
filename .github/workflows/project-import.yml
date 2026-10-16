@@ -88,9 +88,29 @@ jobs:
             exit 1
           fi
 
+      - name: Apply safe Ruff fixes and commit source cleanups
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python -m ruff check app tests alembic --fix; then
+            echo "No Ruff autofixes needed."
+          else
+            echo "Ruff found remaining diagnostics after applying available safe fixes."
+          fi
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend
+          if git diff --cached --quiet; then
+            echo "No lint-driven source changes to commit."
+          else
+            git commit -m "Apply safe Ruff fixes"
+            git push origin HEAD:main
+          fi
+
       - name: Run Ruff
         if: ${{ hashFiles('backend/app/**/*.py') != '' && hashFiles('backend/tests/**/*.py') != '' }}
-        continue-on-error: true
         working-directory: backend
         run: python -m ruff check app tests alembic
 
