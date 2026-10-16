@@ -11,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   build-and-scan:
@@ -32,8 +31,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: logu-ai-cfo-backend:scan
-          format: sarif
-          output: trivy-backend.sarif
+          format: table
           vuln-type: os,library
           severity: CRITICAL
           ignore-unfixed: true
@@ -43,23 +41,8 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: logu-ai-cfo-frontend:scan
-          format: sarif
-          output: trivy-frontend.sarif
+          format: table
           vuln-type: os,library
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
-
-      - name: Upload backend scan results
-        if: always() && hashFiles('trivy-backend.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-backend.sarif
-          category: trivy-backend-image
-
-      - name: Upload frontend scan results
-        if: always() && hashFiles('trivy-frontend.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-frontend.sarif
-          category: trivy-frontend-image
