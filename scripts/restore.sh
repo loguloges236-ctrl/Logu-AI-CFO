@@ -53,12 +53,12 @@ docker compose exec -T db pg_restore --clean --if-exists --no-owner --exit-on-er
 echo "Starting backend privately to access the persistent upload volume..."
 docker compose start backend
 for attempt in $(seq 1 30); do
-  if docker compose exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)" >/dev/null 2>&1; then
+  if docker compose exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)" >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
-if ! docker compose exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)" >/dev/null 2>&1; then
+if ! docker compose exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)" >/dev/null 2>&1; then
   echo "ERROR: backend did not become healthy after database restore; frontend and Caddy remain stopped." >&2
   exit 1
 fi
