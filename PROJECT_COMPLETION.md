@@ -21,7 +21,7 @@ Status labels: Implemented and verified | Implemented but partially verified | N
 
 | Task | Status | Evidence / blocker | Next action |
 |---|---|---|---|
-| Separate migration/admin role from runtime role | Implemented but partially verified | Owner `logu` runs migrations. Runtime role `logu_app` (`database/roles/provision_roles.sql`, migration `20261009_0009`). Provisioning script run twice against a disposable PostgreSQL DB: exit 0 both times, idempotent. Compose now: `migrate` (owner) → `provision-app-role` (one-shot) → `backend` as `logu_app`. Compose wiring written and YAML-parsed locally; Docker run pending CI (`compose-smoke`, dispatched on the branch). | Read CI result for run `39022919368` and fix any failure. |
+| Separate migration/admin role from runtime role | Implemented and verified | Compose: `migrate` (owner) → `provision-app-role` (one-shot) → `backend` as `logu_app`. CI `compose-smoke` run `39023269063` on commit `edf1d53`: success (Docker). | None for compose. |
 | Runtime role is not superuser or owner | Implemented and verified | Test `test_02` and the provisioning script's own checks. Local PostgreSQL 16 (SQL level only). | None for SQL level. |
 | Privilege tests (runtime cannot do admin actions) | Implemented and verified | `backend/tests/sql/test_runtime_role_privileges.py`: 11/11 pass on local PostgreSQL 16. Covers DDL, triggers, ownership, GRANT, role/database creation, `SET ROLE` membership, migration state, and that DML and append-only trigger still work. Full SQL suite 89/89 OK. | Run in CI (needs `COMMERCE_SQL_TEST_ADMIN_URI`). |
 | Migration `20261009_0009` rollback/upgrade docs | Implemented but partially verified | `docs/DATABASE.md` and `docs/DEPLOYMENT.md` sections. Downgrade refused by design. Procedure not run against a live deployment. | Rehearse on staging before production. |
@@ -104,7 +104,7 @@ Status labels: Implemented and verified | Implemented but partially verified | N
 
 ## Known risks
 
-- Compose switch to `logu_app` is unverified until the `compose-smoke` CI run passes (Phase B).
+- Compose switch verified by CI `compose-smoke` (run `39023269063`). Backend validation job still fails in the integration step; logs unreadable from sandbox (Phase B/K).
 - Action pins are only on PR #20's branch; `main` is tag-pinned (Phase L).
 - Integration, E2E and frontend build results are unverified.
 - Local copy and GitHub copy differ in many files (not reconciled).
