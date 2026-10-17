@@ -108,3 +108,18 @@ Status labels: Implemented and verified | Implemented but partially verified | N
 - Action pins are only on PR #20's branch; `main` is tag-pinned (Phase L).
 - Integration, E2E and frontend build results are unverified.
 - Local copy and GitHub copy differ in many files (not reconciled).
+
+## Remaining work status (17 October 2026, branch `feature/db-runtime-role`)
+
+| Item | Status | Evidence / blocker | Next action |
+|---|---|---|---|
+| Encryption key rotation (cipher level) | Implemented but partially verified | `MultiFernet` + `rotate_bytes`; 5 new unit tests; crypto module 19 OK locally; CI green on `851fc98` (run `39026987455`). `docs/KEY_ROTATION.md`. | Build the re-encryption job, then test it on a disposable DB. |
+| Re-encryption job for stored blobs | Not implemented | Design only. | Implement with dry-run, atomic writes, idempotence tests. |
+| Access logging (sensitive reads) | Implemented but partially verified | Document download audited; integration test `test_download_returns_original_bytes_as_attachment_and_is_audited` green in CI. Other read paths not checked. | Audit-coverage review of all read endpoints. |
+| CSP hardening | Implemented but partially verified | `frame-ancestors`, `object-src`, `base-uri`, `form-action` set in `next.config.ts`. Scripts still allow `'unsafe-inline'`. | Nonce-based policy plus browser test. |
+| Backup and restore rehearsal | Not implemented | Scripts exist, syntax-checked in CI. Rehearsal doc `docs/RESTORE_REHEARSAL.md`; not run. | Run rehearsal on a non-production host. |
+| Frontend E2E (Playwright) | Blocked by external dependency | No Playwright in repo. Adding it changes `package.json` and the lockfile, which needs the npm registry; not reachable from this sandbox. | Add in an environment with registry access, or a CI job that regenerates the lock deliberately. |
+| Load and recovery testing | Not implemented | No tool installed. | Choose tool (k6 or locust) and write scenarios after E2E. |
+| Staging readiness gates | Implemented but partially verified | `docs/STAGING_READINESS.md` lists 13 gates with evidence. Gates 7 to 10 open. | Close gates 7 to 10. |
+| Own-server deployment | Blocked by external dependency | Server OS, TLS, DNS, host details needed. | Provide server details, then approval. |
+| Production deployment | Requires my explicit approval | Not started. | None until approved. |
