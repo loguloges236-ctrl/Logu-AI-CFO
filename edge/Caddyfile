@@ -1,0 +1,29 @@
+# Render demo edge (Caddy 2.8). Public origin for the temporary demo only.
+#
+# Routing
+#   /api/*  -> logu-backend  (FastAPI, prefix /api/v1)
+#   else    -> logu-frontend (Next.js)
+#
+# Upstreams are reached over HTTPS on their public Render hostnames. Host is rewritten to the
+# upstream host (required by TRUSTED_HOSTS on each service). X-Forwarded-Proto is fixed to https
+# because Render terminates TLS at the edge; the backend therefore sees an https request and
+# FORCE_HTTPS is satisfied without trusting any client-supplied header.
+:{$PORT:10000} {
+	encode zstd gzip
+
+	header -Server
+
+	handle /api/* {
+		reverse_proxy https://logu-backend.onrender.com {
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	handle {
+		reverse_proxy https://logu-frontend.onrender.com {
+			header_up Host {upstream_hostport}
+			header_up X-Forwarded-Proto https
+		}
+	}
+}
