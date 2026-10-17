@@ -79,7 +79,23 @@ jobs:
         working-directory: backend
         env:
           TEST_DATABASE_URL: postgresql+psycopg://logu:logu-ci-test-password@localhost:5432/logu_test
-        run: python -m pytest tests/integration -q
+        run: |
+          # Surface failures as check-run annotations (readable via the API) in addition to the raw log.
+          set +e
+          python -m pytest tests/integration -q -rfE --tb=short > integration-out.txt 2>&1
+          rc=$?
+          set -e
+          tail -n 120 integration-out.txt
+          python - <<'PY'
+          import pathlib
+          lines = pathlib.Path("integration-out.txt").read_text(errors="replace").splitlines()
+          for line in lines:
+              if line.startswith(("FAILED", "ERROR", "E ", "AssertionError", "sqlalchemy", "psycopg")) or "Error:" in line:
+                  print("::error title=integration::" + line[:600].replace("%", "%25").replace("\r", ""))
+          for line in lines[-40:]:
+              print("::notice title=integration-tail::" + line[:600].replace("%", "%25"))
+          PY
+          exit $rc
 
       - name: Install frontend dependencies
         if: ${{ hashFiles('frontend/package.json') != '' }}
