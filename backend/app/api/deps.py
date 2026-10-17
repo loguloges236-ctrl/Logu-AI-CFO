@@ -21,7 +21,9 @@ def get_storage() -> LocalFileStorage:
 
 def get_cipher() -> SensitiveDataCipher:
     try:
-        return SensitiveDataCipher(get_settings().data_encryption_key)
+        settings = get_settings()
+        previous = [k.strip() for k in settings.data_encryption_key_previous.split(",") if k.strip()]
+        return SensitiveDataCipher(settings.data_encryption_key, previous)
     except CryptoError:
         raise APIError(
             503,

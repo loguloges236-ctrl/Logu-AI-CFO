@@ -137,3 +137,38 @@ class EdgeMiddlewareTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KeyRotationTests(unittest.TestCase):
+    def setUp(self):
+        self.old_key = Fernet.generate_key().decode()
+        self.new_key = Fernet.generate_key().decode()
+        self.old_only = SensitiveDataCipher(self.old_key)
+        self.rotating = SensitiveDataCipher(self.new_key, [self.old_key])
+
+    def test_data_written_under_old_key_stays_readable_after_rotation(self):
+        token = self.old_only.encrypt_bytes(b"invoice-7")
+        self.assertEqual(self.rotating.decrypt_bytes(token), b"invoice-7")
+
+    def test_new_writes_use_primary_key_only(self):
+        token = self.rotating.encrypt_bytes(b"fresh")
+        self.assertTrue(self.rotating.is_current(token))
+        with self.assertRaises(CryptoError):
+            self.old_only.decrypt_bytes(token)
+
+    def test_rotate_reencrypts_under_primary_key(self):
+        token = self.old_only.encrypt_bytes(b"ledger-note")
+        self.assertFalse(self.rotating.is_current(token))
+        rotated = self.rotating.rotate_bytes(token)
+        self.assertTrue(self.rotating.is_current(rotated))
+        self.assertEqual(self.rotating.decrypt_bytes(rotated), b"ledger-note")
+
+    def test_unknown_key_cannot_rotate(self):
+        stranger = SensitiveDataCipher(Fernet.generate_key().decode())
+        token = stranger.encrypt_bytes(b"x")
+        with self.assertRaises(CryptoError):
+            self.rotating.rotate_bytes(token)
+
+    def test_malformed_previous_key_is_rejected(self):
+        with self.assertRaises(CryptoError):
+            SensitiveDataCipher(self.new_key, ["not-a-fernet-key"])

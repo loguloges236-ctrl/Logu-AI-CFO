@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     security_hmac_key: str = ""
     # Fernet key for encrypting uploaded document bytes and sensitive fields. Required in production.
     data_encryption_key: str = ""
+    # Comma-separated retired Fernet keys, accepted for decryption only during a rotation (docs/KEY_ROTATION.md).
+    data_encryption_key_previous: str = ""
 
     upload_storage_path: Path = Field(default_factory=default_upload_storage_path)
     max_upload_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
@@ -133,6 +135,7 @@ class Settings(BaseSettings):
                 "bootstrap_token": self.bootstrap_token,
                 "security_hmac_key": self.security_hmac_key,
                 "data_encryption_key": self.data_encryption_key,
+                "data_encryption_key_previous": self.data_encryption_key_previous,
                 "upload_storage_path": str(self.upload_storage_path),
                 "ai_provider": self.ai_provider,
                 "notification_provider": self.notification_provider,

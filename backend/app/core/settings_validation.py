@@ -76,6 +76,10 @@ def validate_settings(
     encryption_key = str(values.get("data_encryption_key") or "")
     if encryption_key and not is_valid_fernet_key(encryption_key):
         errors.append("DATA_ENCRYPTION_KEY must be a Fernet key (32 bytes, URL-safe base64)")
+    for previous in [k.strip() for k in str(values.get("data_encryption_key_previous") or "").split(",") if k.strip()]:
+        if not is_valid_fernet_key(previous):
+            errors.append("DATA_ENCRYPTION_KEY_PREVIOUS entries must each be a Fernet key")
+            break
 
     hmac_key = str(values.get("security_hmac_key") or "")
     if hmac_key and len(hmac_key) < MIN_HMAC_KEY_LENGTH:
