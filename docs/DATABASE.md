@@ -30,7 +30,24 @@ PostgreSQL 16 is the only supported database. The backend refuses other dialects
 
 `logu_reject_append_only_change()` raises an exception on `UPDATE`, `DELETE` (row-level) and `TRUNCATE` (statement-level) for `audit_logs` and `security_events`.
 
-**Limitation:** table owners and superusers can disable triggers. Operational guidance is in [DEPLOYMENT.md](DEPLOYMENT.md).
+**Limitation:** the owner role (`logu`) and superusers can still disable triggers. The runtime role (`logu_app`, below) cannot. Operational guidance is in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## Runtime role (least privilege, revision `20261009_0009`)
+
+Two database roles, with separate jobs:
+
+| Role | Used by | Can | Cannot |
+|---|---|---|---|
+| `logu` (owner) | `migrate` service, operator commands that change schema, `alembic` | Owns the database, schema and tables; runs DDL | Nothing is withheld; it is the trusted migration role |
+| `logu_app` (runtime) | `backend` service (once switched, see DEPLOYMENT.md) | `SELECT, INSERT, UPDATE, DELETE` on tables; `USAGE, SELECT` on sequences; `CONNECT` on the database; `USAGE` on schema `public` | DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`), ownership, `GRANT`, role or database creation, `alembic_version` access, superuser or `BYPASSRLS` |
+
+- Role setup: `database/roles/provision_roles.sql`. It prompts for the password (never on the command line), is safe to re-run, and does not drop or change data.
+- Migration `20261009_0009` applies the table and sequence grants when `logu_app` exists. Without the role it does nothing, so local development and test databases still work with the owner alone. The role name comes from the session setting `logu.runtime_role` (default `logu_app`); tests use this to point at a disposable role.
+- Default privileges (`ALTER DEFAULT PRIVILEGES`) give `logu_app` the same DML grants on tables and sequences created later by the owner, so future migrations do not need a manual grant step.
+- `REVOKE ALL ON alembic_version` keeps migration state with the owner.
+- Downgrade is refused. Rollback is a manual, reviewed `REVOKE` (see DEPLOYMENT.md). Nothing is dropped automatically.
+- Tests: `backend/tests/sql/test_runtime_role_privileges.py` (11 tests). They run the real migration as the owner, then assert with `SET ROLE` inside a superuser session that the runtime role keeps every data operation, is denied each DDL, trigger, ownership, grant, role and migration-state action, and that the append-only trigger still blocks `UPDATE` and `DELETE` for it. They need `COMMERCE_SQL_TEST_ADMIN_URI`.
+- Not covered by these tests: connecting as `logu_app` over the real network with its password (the provisioning script was checked with a local psql session), and the full FastAPI application running under `logu_app` (needs SQLAlchemy and FastAPI, which are unavailable in the authoring environment).
 
 ## Verification status
 
