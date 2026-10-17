@@ -1,0 +1,53 @@
+# Render Blueprint DRAFT for a TEMPORARY demo with sample data only. Not deployed, not verified on Render yet.
+# Read docs/RENDER_DEMO.md first. Secrets are marked sync: false and must be entered in the Render dashboard.
+services:
+  - type: web
+    name: logu-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    # Migrations run as the database owner on this demo database, then the API starts.
+    dockerCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000 --no-server-header --no-access-log"
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: DATABASE_URL            # set to postgresql+psycopg://USER:PASSWORD@HOST/DBNAME from the logu-db connection info
+        sync: false
+      - key: SECURITY_HMAC_KEY       # random string, 32+ characters
+        sync: false
+      - key: DATA_ENCRYPTION_KEY     # Fernet key, see docs/RENDER_DEMO.md
+        sync: false
+      - key: TRUSTED_HOSTS           # e.g. logu-backend.onrender.com
+        sync: false
+      - key: FRONTEND_ORIGINS        # e.g. https://logu-frontend.onrender.com
+        sync: false
+      - key: FORCE_HTTPS
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: ENABLE_BOOTSTRAP
+        value: "false"
+      - key: AI_PROVIDER
+        value: disabled
+      - key: NOTIFICATION_PROVIDER
+        value: disabled
+      - key: UPLOAD_STORAGE_PATH
+        value: /var/lib/logu-ai-cfo/uploads   # ephemeral on Render free (no persistent disk)
+      - key: CLAMAV_HOST
+        value: clamav-not-deployed            # uploads fail closed in this demo
+
+  - type: web
+    name: logu-frontend
+    runtime: docker
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: API_INTERNAL_URL        # https://logu-backend.onrender.com (public URL; no private network on free tier)
+        sync: false
+
+databases:
+  - name: logu-db
+    databaseName: logu_cfo
+    user: logu
+    plan: free
