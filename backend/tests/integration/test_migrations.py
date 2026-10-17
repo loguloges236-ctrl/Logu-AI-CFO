@@ -15,7 +15,7 @@ from tests.conftest import EMAIL, _alembic_config  # noqa: F401  (helper reuse)
 def test_fresh_database_migrates_to_head(fresh_db):
     with get_engine().connect() as connection:
         version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    assert version == "20261008_0008"
+    assert version == "20261009_0009"
 
 
 def test_migrated_schema_matches_orm_metadata(fresh_db):
