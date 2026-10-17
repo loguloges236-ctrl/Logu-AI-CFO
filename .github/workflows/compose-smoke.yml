@@ -33,6 +33,7 @@ jobs:
           replacements = {
               'ENVIRONMENT': 'test',
               'POSTGRES_PASSWORD': password,
+              'APP_DB_PASSWORD': secrets.token_hex(24),
               'DATABASE_URL': f'postgresql+psycopg://logu:{password}@db:5432/logu_cfo',
               'SITE_ADDRESS': 'http://localhost',
               'TRUSTED_HOSTS': 'localhost,127.0.0.1',

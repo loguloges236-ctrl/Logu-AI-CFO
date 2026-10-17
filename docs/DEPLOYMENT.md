@@ -34,28 +34,26 @@ Production validation (`core/settings_validation.py`) refuses to start when a re
 3. Create the owner with the bootstrap flow, then disable bootstrap. Alternatively, set the owner password with `python -m app.cli reset-owner-password --email <address>` inside the backend container.
 4. `docker compose up -d backend frontend caddy`
 
-## Least-privilege database role (manual switch)
+## Least-privilege database role
 
-Status: **implemented and tested at the SQL level; NOT the compose default yet.** `docker-compose.yml` still points `backend` at the owner role `logu`. Switching it needs a provisioning step in the compose flow and a Docker run, which were not possible in the authoring environment. Until then, the switch below is a manual, reviewed operator step.
+`docker-compose.yml` runs `migrate` (owner `logu`, applies migrations including `20261009_0009`), then `provision-app-role` (one-shot; runs `database/roles/provision_roles.sql` idempotently), then `backend` as `logu_app`. Compose needs `APP_DB_PASSWORD` in `.env` (at least 16 characters); `docker compose config` fails without it.
 
-Order (do not skip the backup):
+Upgrade order on an existing deployment (do not skip the backup):
 
 1. Back up the database (`./scripts/backup.sh`). Keep the bundle.
-2. Set `APP_DB_PASSWORD` in `.env` to a value of at least 16 characters, unused elsewhere. Do not put it on a command line.
-3. Provision the role as the owner (needs CREATEROLE) or as the bootstrap superuser: `psql -h <host> -U logu -d logu_cfo -f database/roles/provision_roles.sql` and enter the password at the prompt. Re-running is safe.
-4. Run `docker compose run --rm migrate`. This applies `20261009_0009` as the owner. If the role already existed at that point, the grants are applied; the provisioning script repeats them, so the order does not matter.
-5. Point the backend at the runtime role: `DATABASE_URL=postgresql+psycopg://logu_app:<APP_DB_PASSWORD>@db:5432/logu_cfo`, then `docker compose up -d backend`.
-6. Verify: `/health/ready` returns 200; sign in; create a test record in a non-production database first; confirm `logu_app` cannot run DDL (`SET ROLE` checks are in the SQL test suite).
+2. Add `APP_DB_PASSWORD` to `.env` (unused elsewhere).
+3. `docker compose up -d --build` (or `docker compose run --rm migrate`, then `docker compose up -d provision-app-role backend`).
+4. Verify: `/health/ready` returns 200; sign in; in a non-production database, confirm `logu_app` cannot run DDL (SQL test suite covers this).
 
-Compatibility: the `migrate` service and operator commands that change schema must stay on the owner URL. The backend and any read-only or application command use `logu_app`. No data is moved, no ownership changes, and no table is recreated.
+Compatibility: `migrate` and schema-changing operator commands stay on the owner URL; the backend uses `logu_app`. No data is moved, no ownership changes, no table is recreated.
 
 Rollback (no data loss):
 
-1. Set `DATABASE_URL` back to the owner URL (`logu`) and run `docker compose up -d backend`. The application works again immediately; the grants stay and are harmless.
+1. Set the backend's `DATABASE_URL` back to the owner URL (`logu`) in `docker-compose.yml` and run `docker compose up -d backend`. The application works again immediately; the grants stay and are harmless.
 2. Only if the runtime role must be removed: as the owner, run the `REVOKE` statements in a reviewed change (`REVOKE ALL ON ALL TABLES IN SCHEMA public FROM logu_app;`, `REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM logu_app;`, the matching `ALTER DEFAULT PRIVILEGES ... REVOKE`, then `REVOKE USAGE ON SCHEMA public FROM logu_app;` and `REVOKE CONNECT ON DATABASE logu_cfo FROM logu_app;`), and `DROP ROLE logu_app;` only after confirming nothing depends on it. Never drop data or run these against production without an approved change.
 3. Migration `20261009_0009` has no automatic downgrade by design (`downgrade` raises). Do not run `alembic downgrade`.
 
-Not verified here: this procedure has not been run against a live deployment, and the compose switch and provisioning-in-compose are not implemented.
+Verification: compose wiring is checked by the `compose-smoke` CI workflow (Docker runner). It has not been run against a live server.
 
 ## Backup and restore
 

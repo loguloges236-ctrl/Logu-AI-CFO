@@ -39,7 +39,7 @@ Two database roles, with separate jobs:
 | Role | Used by | Can | Cannot |
 |---|---|---|---|
 | `logu` (owner) | `migrate` service, operator commands that change schema, `alembic` | Owns the database, schema and tables; runs DDL | Nothing is withheld; it is the trusted migration role |
-| `logu_app` (runtime) | `backend` service (once switched, see DEPLOYMENT.md) | `SELECT, INSERT, UPDATE, DELETE` on tables; `USAGE, SELECT` on sequences; `CONNECT` on the database; `USAGE` on schema `public` | DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`), ownership, `GRANT`, role or database creation, `alembic_version` access, superuser or `BYPASSRLS` |
+| `logu_app` (runtime) | `backend` service (via `docker-compose.yml`, see DEPLOYMENT.md) | `SELECT, INSERT, UPDATE, DELETE` on tables; `USAGE, SELECT` on sequences; `CONNECT` on the database; `USAGE` on schema `public` | DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`), ownership, `GRANT`, role or database creation, `alembic_version` access, superuser or `BYPASSRLS` |
 
 - Role setup: `database/roles/provision_roles.sql`. It prompts for the password (never on the command line), is safe to re-run, and does not drop or change data.
 - Migration `20261009_0009` applies the table and sequence grants when `logu_app` exists. Without the role it does nothing, so local development and test databases still work with the owner alone. The role name comes from the session setting `logu.runtime_role` (default `logu_app`); tests use this to point at a disposable role.

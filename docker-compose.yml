@@ -52,12 +52,32 @@ services:
     security_opt: ["no-new-privileges:true"]
     networks: [data]
 
+  # One-shot: creates or refreshes the least-privilege runtime role logu_app (database/roles/provision_roles.sql).
+  # Runs as the bootstrap superuser `logu`. Idempotent. The password is piped to psql's prompt, never on the command line.
+  provision-app-role:
+    image: postgres:16-alpine
+    restart: "no"
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env (at least 16 characters)}
+    volumes:
+      - ./database/roles:/roles:ro
+    command: ["sh", "-c", "printf '%s\\n' \"$$APP_DB_PASSWORD\" | psql -X -v ON_ERROR_STOP=1 -h db -U logu -d logu_cfo -f /roles/provision_roles.sql"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    security_opt: ["no-new-privileges:true"]
+    networks: [data]
+
   backend:
     image: logu-ai-cfo-backend:local
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+psycopg://logu:${POSTGRES_PASSWORD}@db:5432/logu_cfo
+      # Runtime role: owns nothing, DML only. Migrations stay on `logu` (see migrate).
+      DATABASE_URL: postgresql+psycopg://logu_app:${APP_DB_PASSWORD}@db:5432/logu_cfo
       UPLOAD_STORAGE_PATH: /var/lib/logu-ai-cfo/uploads
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
@@ -68,6 +88,8 @@ services:
       INTERNAL_API_HOSTS: backend
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      provision-app-role:
         condition: service_completed_successfully
       db:
         condition: service_healthy
