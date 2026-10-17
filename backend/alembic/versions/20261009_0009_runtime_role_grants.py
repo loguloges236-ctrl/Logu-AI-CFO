@@ -70,4 +70,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    raise RuntimeError("Destructive downgrade is refused. Revoke the grants manually (see docs/DEPLOYMENT.md).")
+    raise RuntimeError(
+        "Downgrade is disabled: destructive downgrade is refused. Revoke the grants manually (see docs/DEPLOYMENT.md)."
+    )
