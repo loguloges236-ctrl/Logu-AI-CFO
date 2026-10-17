@@ -19,6 +19,7 @@ RUN pip install -r requirements.txt \
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY start.sh ./start.sh
 RUN chmod -R a-w /app \
  && mkdir -p /var/lib/logu-ai-cfo/uploads \
  && chown app:app /var/lib/logu-ai-cfo/uploads \
@@ -30,4 +31,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD python -c "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-server-header", "--no-access-log"]
+CMD ["sh", "start.sh"]
