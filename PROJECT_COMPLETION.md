@@ -104,7 +104,7 @@ Status labels: Implemented and verified | Implemented but partially verified | N
 
 ## Known risks
 
-- Compose switch verified by CI `compose-smoke` (run `39023269063`). Backend validation job still fails in the integration step; logs unreadable from sandbox (Phase B/K).
+- Compose switch verified by CI `compose-smoke` (run `39023269063`). Backend validation job `39024020732` on commit `b075f8f`: all steps success (unit, PostgreSQL integration, frontend lint/typecheck/build, compose config, image build).
 - Action pins are only on PR #20's branch; `main` is tag-pinned (Phase L).
 - Integration, E2E and frontend build results are unverified.
 - Local copy and GitHub copy differ in many files (not reconciled).
