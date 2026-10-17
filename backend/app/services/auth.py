@@ -55,6 +55,15 @@ def _user_agent(request: Request) -> str | None:
     return value[:512] if value else None
 
 
+# devices.display_name is VARCHAR(120); a full browser User-Agent is longer, so the label is truncated.
+DEVICE_DISPLAY_NAME_MAX = 120
+
+
+def _device_display_name(request: Request) -> str | None:
+    value = _user_agent(request)
+    return value[:DEVICE_DISPLAY_NAME_MAX] if value else None
+
+
 def _client_ip(request: Request) -> str | None:
     return request.scope.get(CLIENT_IP_KEY)
 
@@ -142,7 +151,7 @@ def resolve_device(db: DBSession, owner: Owner, request: Request) -> tuple[Devic
     device = Device(
         owner_id=owner.id,
         identifier_hash=digest("device", raw),
-        display_name=_user_agent(request),
+        display_name=_device_display_name(request),
         user_agent=_user_agent(request),
         last_seen_at=now,
     )
